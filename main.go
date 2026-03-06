@@ -1,0 +1,65 @@
+package main
+
+import (
+	"fmt"
+	"net/http"
+	"os"
+
+	"github.com/PunMung-66/ApartmentSys/config"
+	"github.com/PunMung-66/ApartmentSys/controller"
+	"github.com/PunMung-66/ApartmentSys/internal/auth"
+	"github.com/PunMung-66/ApartmentSys/model"
+	"github.com/PunMung-66/ApartmentSys/repository"
+	"github.com/PunMung-66/ApartmentSys/service"
+	"github.com/gin-gonic/gin"
+	"github.com/joho/godotenv"
+)
+
+func main() {
+	
+	err := godotenv.Load(".env.local")
+	if err != nil {
+		fmt.Println("Error loading env file")
+	}
+
+	port := os.Getenv("PORT")
+	secret := os.Getenv("JWT_SECRET")
+
+	r := gin.Default()
+
+	r.GET("/health", func(c *gin.Context) {
+		res := map[string]any{
+			"status":  http.StatusOK,
+			"version": "0.0.1",
+		}
+		c.JSON(http.StatusOK, res)
+	})
+
+	db, err := config.ConnectDatabase()
+	if err != nil {
+		panic("failed to connect database: " + err.Error())
+	}
+
+	db.AutoMigrate(&model.User{})
+
+	userRepo := repository.NewUserRepository(db)
+	userService := service.NewUserService(userRepo)
+	userController := controller.NewUserController(userService)
+
+	userRoute := r.Group("/user")
+	userRoute.Use(auth.Protect([]byte(secret), "ADMIN"))
+	{
+		userRoute.POST("/create", userController.CreateUser)
+	}
+
+	authService := service.NewAuthService(userRepo)
+	authController := controller.NewAuthController(authService, []byte(secret))
+
+	authRoute := r.Group("/auth")
+	{
+		authRoute.POST("/login", authController.LoginHandler)
+		authRoute.POST("/register", authController.RegisterHandler)
+	}
+
+	r.Run(":" + port)
+}
