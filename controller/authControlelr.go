@@ -37,6 +37,17 @@ func (ac *AuthController) LoginHandler(c *gin.Context) {
 		return
 	}
 
+	// Validate required fields are not empty
+	if loginRequest.Email == "" || loginRequest.Password == "" {
+		appErr := response.NewAppResponse(
+			http.StatusBadRequest,
+			"Incomplete request body: email and password are required",
+			nil,
+		)
+		c.JSON(appErr.Status, appErr.Response())
+		return
+	}
+
 	tokenString, err := ac.authService.Login(loginRequest, ac.signature)
 	if err != nil {
 		appErr := response.NewAppResponse(http.StatusUnauthorized, "Invalid username or password", err.Error())
@@ -53,8 +64,11 @@ func (ac *AuthController) LoginHandler(c *gin.Context) {
 
 func (ac *AuthController) RegisterHandler(c *gin.Context) {
 	var req struct {
-		Username string `json:"username"`
+		Name     string `json:"name"`
+		Phone    string `json:"phone"`
+		Email    string `json:"email"`
 		Password string `json:"password"`
+		Role     string `json:"role"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		appErr := response.NewAppResponse(
@@ -66,7 +80,29 @@ func (ac *AuthController) RegisterHandler(c *gin.Context) {
 		return
 	}
 
-	createdUser, err := ac.authService.Register(req.Username, req.Password)
+	// Validate required fields are not empty
+	if req.Name == "" || req.Phone == "" || req.Email == "" || req.Password == "" {
+		appErr := response.NewAppResponse(
+			http.StatusBadRequest,
+			"Incomplete request body: name, phone, email, and password are required",
+			nil,
+		)
+		c.JSON(appErr.Status, appErr.Response())
+		return
+	}
+
+	// Reject if trying to set ADMIN role during registration
+	if req.Role == "ADMIN" {
+		appErr := response.NewAppResponse(
+			http.StatusBadRequest,
+			"Cannot set ADMIN role during tenant registration",
+			nil,
+		)
+		c.JSON(appErr.Status, appErr.Response())
+		return
+	}
+
+	createdUser, err := ac.authService.Register(req.Name, req.Phone, req.Email, req.Password, "TENANT")
 	if err != nil {
 		appErr := response.NewAppResponse(http.StatusBadRequest, "Registration failed", err.Error())
 		c.JSON(appErr.Status, appErr.Response())

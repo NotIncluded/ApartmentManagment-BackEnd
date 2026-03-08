@@ -1,0 +1,259 @@
+### ==========================================
+
+### APARTMENT SYSTEM - AUTH & USER MANAGEMENT TESTS
+
+### ==========================================
+
+### Variables
+
+@baseUrl = http://localhost:8081
+
+@adminEmail = admin@test.com
+@adminPassword = $2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcflY0V3E/5t6dv3Vv4YFQy1z9e
+
+@tenantEmail = [tenant@test.com](mailto:tenant@test.com)
+@tenantPassword = TenantPassword123
+
+@tenantEmail2 = [tenant2@test.com](mailto:tenant2@test.com)
+@tenantPassword2 = TenantPassword456
+
+### ==========================================
+
+### TEST 1: HEALTH CHECK
+
+### ==========================================
+
+GET {{baseUrl}}/health
+Accept: application/json
+
+### ==========================================
+
+### TEST 2: REGISTER TENANT
+
+### ==========================================
+
+# @name registerTenant
+
+POST {{baseUrl}}/auth/register
+Content-Type: application/json
+
+{
+"name": "John Tenant",
+"phone": "0812345678",
+"email": "{{tenantEmail}}",
+"password": "{{tenantPassword}}",
+"role": "TENANT"
+}
+
+### ==========================================
+
+### TEST 3: REGISTER SECOND TENANT
+
+### ==========================================
+
+POST {{baseUrl}}/auth/register
+Content-Type: application/json
+
+{
+"name": "Jane Tenant",
+"phone": "0887654321",
+"email": "{{tenantEmail2}}",
+"password": "{{tenantPassword2}}",
+"role": "TENANT"
+}
+
+### ==========================================
+
+### TEST 4: REGISTER ADMIN - SHOULD FAIL
+
+### ==========================================
+
+POST {{baseUrl}}/auth/register
+Content-Type: application/json
+
+{
+"name": "Admin User",
+"phone": "0811111111",
+"email": "{{adminEmail}}",
+"password": "{{adminPassword}}",
+"role": "ADMIN"
+}
+
+### ==========================================
+
+### TEST 5: LOGIN TENANT
+
+### ==========================================
+
+# @name loginTenant
+
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+"email": "{{tenantEmail}}",
+"password": "{{tenantPassword}}"
+}
+
+### ==========================================
+
+### TEST 6: LOGIN ADMIN
+
+### ==========================================
+
+# @name loginAdmin
+
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+"email": "{{adminEmail}}",
+"password": "{{adminPassword}}"
+}
+
+### ==========================================
+
+### TEST 7: PROTECTED ROUTE - NO TOKEN
+
+### ==========================================
+
+POST {{baseUrl}}/user/create
+Content-Type: application/json
+
+{
+"name": "Unauthorized User",
+"phone": "0899999999",
+"email": "[newuser@test.com](mailto:newuser@test.com)",
+"password": "Password123",
+"role": "TENANT"
+}
+
+### ==========================================
+
+### TEST 8: TENANT TRY CREATE USER - SHOULD FAIL
+
+### ==========================================
+
+POST {{baseUrl}}/user/create
+Content-Type: application/json
+Authorization: Bearer {{loginTenant.response.body.data.access_token}}
+
+{
+"name": "Tenant Created User",
+"phone": "0899999999",
+"email": "[tenantcreate@test.com](mailto:tenantcreate@test.com)",
+"password": "Password123",
+"role": "TENANT"
+}
+
+### ==========================================
+
+### TEST 9: ADMIN CREATE TENANT
+
+### ==========================================
+
+POST {{baseUrl}}/user/create
+Content-Type: application/json
+Authorization: Bearer {{loginAdmin.response.body.data.access_token}}
+
+{
+"name": "Created By Admin",
+"phone": "0855555555",
+"email": "[createdtenant@test.com](mailto:createdtenant@test.com)",
+"password": "TenantPassword789",
+"role": "TENANT"
+}
+
+### ==========================================
+
+### TEST 10: INVALID LOGIN
+
+### ==========================================
+
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+"email": "{{tenantEmail}}",
+"password": "WrongPassword"
+}
+
+### ==========================================
+
+### TEST 11: LOGIN NON EXISTENT USER
+
+### ==========================================
+
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+"email": "[nonexistent@test.com](mailto:nonexistent@test.com)",
+"password": "SomePassword"
+}
+
+### ==========================================
+
+### TEST 12: REGISTER MISSING FIELD
+
+### ==========================================
+
+POST {{baseUrl}}/auth/register
+Content-Type: application/json
+
+{
+"name": "Incomplete User",
+"email": "[incomplete@test.com](mailto:incomplete@test.com)"
+}
+
+### ==========================================
+
+### TEST 13: DELETE USER WITHOUT TOKEN
+
+### ==========================================
+
+DELETE {{baseUrl}}/user/test-id
+
+### ==========================================
+
+### TEST 14: DELETE USER WITH TENANT TOKEN
+
+### ==========================================
+
+DELETE {{baseUrl}}/user/test-id
+Authorization: Bearer {{loginTenant.response.body.data.access_token}}
+
+### ==========================================
+
+### TEST 15: INVALID TOKEN
+
+### ==========================================
+
+POST {{baseUrl}}/user/create
+Content-Type: application/json
+Authorization: Bearer invalid.token.here
+
+{
+"name": "Test User",
+"phone": "0811112222",
+"email": "[test@test.com](mailto:test@test.com)",
+"password": "TestPassword123",
+"role": "TENANT"
+}
+
+### ==========================================
+
+### TEST 16: DUPLICATE EMAIL
+
+### ==========================================
+
+POST {{baseUrl}}/auth/register
+Content-Type: application/json
+
+{
+"name": "Duplicate Tenant",
+"phone": "0822222222",
+"email": "{{tenantEmail}}",
+"password": "DifferentPassword123",
+"role": "TENANT"
+}

@@ -16,7 +16,7 @@ import (
 )
 
 func main() {
-	
+
 	err := godotenv.Load(".env.local")
 	if err != nil {
 		fmt.Println("Error loading env file")
@@ -40,7 +40,7 @@ func main() {
 		panic("failed to connect database: " + err.Error())
 	}
 
-	db.AutoMigrate(&model.User{})
+	db.AutoMigrate(&model.User{}, &model.Room{}, &model.Contract{}, &model.UtilityRate{}, &model.UtilityUsage{}, &model.Bill{}, &model.Payment{})
 
 	userRepo := repository.NewUserRepository(db)
 	userService := service.NewUserService(userRepo)
@@ -50,6 +50,7 @@ func main() {
 	userRoute.Use(auth.Protect([]byte(secret), "ADMIN"))
 	{
 		userRoute.POST("/create", userController.CreateUser)
+		userRoute.DELETE("/:id", userController.DeleteUser)
 	}
 
 	authService := service.NewAuthService(userRepo)

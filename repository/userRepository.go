@@ -10,14 +10,14 @@ type UserRepository struct {
 }
 
 type UserRepositoryInterface interface {
-	CreateUser(user *model.User) (model.User, error)
-	FindUserByUsername( name * string) (model.User, error)
-	UpdateUser(user *model.User) (model.User, error)
-	DeleteUser(user *model.User) (error)
+	CreateUser(user *model.User) (*model.User, error)
+	FindUserByEmail(email *string) (*model.User, error)
+	UpdateUser(user *model.User) (*model.User, error)
+	DeleteUser(user *model.User) error
 }
 
-func NewUserRepository(db *gorm.DB) *UserRepository{
-	return &UserRepository{db:db}
+func NewUserRepository(db *gorm.DB) *UserRepository {
+	return &UserRepository{db: db}
 }
 
 func (t *UserRepository) CreateUser(user *model.User) (*model.User, error) {
@@ -25,11 +25,16 @@ func (t *UserRepository) CreateUser(user *model.User) (*model.User, error) {
 	return user, result.Error
 }
 
-func (t *UserRepository) FindUserByUsername(name *string) (*model.User, error) {
+func (t *UserRepository) FindUserByEmail(email *string) (*model.User, error) {
 	var user model.User
-	result := t.db.Where("username = ?", name).First(&user)
+	result := t.db.Where("email = ?", email).First(&user)
 	if result.Error != nil {
 		return nil, result.Error
 	}
 	return &user, nil
+}
+
+func (t *UserRepository) DeleteUser(user *model.User) error {
+	result := t.db.Delete(&user)
+	return result.Error
 }

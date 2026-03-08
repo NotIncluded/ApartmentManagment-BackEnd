@@ -18,7 +18,7 @@ func NewUserService(userRepo *repository.UserRepository) *UserService {
 }
 func (s *UserService) CreateUser(user *model.User) (*model.User, error) {
 
-	if user.Username == "" || user.Password == "" || user.Role == "" {
+	if user.Name == "" || user.Email == "" || user.Password == "" || user.Role == "" {
 		return nil, errors.New("incomplete request body")
 	}
 
@@ -28,4 +28,16 @@ func (s *UserService) CreateUser(user *model.User) (*model.User, error) {
 	}
 
 	return userResponse, nil
+}
+
+func (s *UserService) DeleteUser(userID string) error {
+	user := &model.User{}
+	user.ID = userID
+
+	err := s.userRepo.DeleteUser(user)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
