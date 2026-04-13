@@ -13,7 +13,7 @@ type UserRepositoryInterface interface {
 	CreateUser(user *model.User) (*model.User, error)
 	FindUserByEmail(email *string) (*model.User, error)
 	UpdateUser(user *model.User) (*model.User, error)
-	DeleteUser(user *model.User) error
+	DeleteUser(user *model.User) error 
 }
 
 func NewUserRepository(db *gorm.DB) *UserRepository {
