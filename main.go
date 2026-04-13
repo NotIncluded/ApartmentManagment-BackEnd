@@ -65,10 +65,10 @@ func main() {
 	userService := service.NewUserService(userRepo)
 	userController := controller.NewUserController(userService)
 
-	userRoute := r.Group("/user")
+	userRoute := r.Group("/users")
 	userRoute.Use(auth.Protect([]byte(secret), "STAFF"))
 	{
-		userRoute.POST("/create", userController.CreateUser)
+		userRoute.POST("/", userController.CreateUser)
 		userRoute.DELETE("/:id", userController.DeleteUser)
 	}
 

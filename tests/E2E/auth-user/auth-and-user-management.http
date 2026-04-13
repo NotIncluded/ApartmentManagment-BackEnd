@@ -9,7 +9,7 @@
 @baseUrl = http://localhost:8081
 
 @staffEmail = staff@test.com
-@staffPassword = $2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcflY0V3E/5t6dv3Vv4YFQy1z9e
+@staffPassword = staffpass
 
 @tenantEmail = [tenant@test.com](mailto:tenant@test.com)
 @tenantPassword = TenantPassword123
@@ -117,7 +117,7 @@ Content-Type: application/json
 
 ### ==========================================
 
-POST {{baseUrl}}/user/create
+POST {{baseUrl}}/users
 Content-Type: application/json
 
 {
@@ -134,9 +134,9 @@ Content-Type: application/json
 
 ### ==========================================
 
-POST {{baseUrl}}/user/create
+POST {{baseUrl}}/users
 Content-Type: application/json
-Authorization: Bearer {{loginStaff.response.body.data.access_token}}
+Authorization: Bearer {{loginTenant.response.body.data.access_token}}
 
 {
 "name": "Tenant Created User",
@@ -152,7 +152,7 @@ Authorization: Bearer {{loginStaff.response.body.data.access_token}}
 
 ### ==========================================
 
-POST {{baseUrl}}/user/create
+POST {{baseUrl}}/users
 Content-Type: application/json
 Authorization: Bearer {{loginStaff.response.body.data.access_token}}
 
@@ -212,7 +212,7 @@ Content-Type: application/json
 
 ### ==========================================
 
-DELETE {{baseUrl}}/user/test-id
+DELETE {{baseUrl}}/users/test-id
 
 ### ==========================================
 
@@ -220,7 +220,7 @@ DELETE {{baseUrl}}/user/test-id
 
 ### ==========================================
 
-DELETE {{baseUrl}}/user/test-id
+DELETE {{baseUrl}}/users/test-id
 Authorization: Bearer {{loginTenant.response.body.data.access_token}}
 
 ### ==========================================
@@ -229,7 +229,7 @@ Authorization: Bearer {{loginTenant.response.body.data.access_token}}
 
 ### ==========================================
 
-POST {{baseUrl}}/user/create
+POST {{baseUrl}}/users
 Content-Type: application/json
 Authorization: Bearer invalid.token.here
 
