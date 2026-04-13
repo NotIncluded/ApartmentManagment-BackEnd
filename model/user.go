@@ -13,7 +13,7 @@ type User struct {
 	Phone     string         `json:"phone"`
 	Email     string         `json:"email" gorm:"unique;not null"`
 	Password  string         `json:"password" gorm:"not null"`
-	Role      string         `json:"role" gorm:"not null;check:role IN ('ADMIN','TENANT')"`
+	Role      string         `json:"role" gorm:"not null;check:role IN ('STAFF','TENANT')"`
 	CreatedAt time.Time      `json:"created_at"`
 	UpdatedAt time.Time      `json:"updated_at"`
 	DeletedAt gorm.DeletedAt `gorm:"index" json:"deleted_at"`

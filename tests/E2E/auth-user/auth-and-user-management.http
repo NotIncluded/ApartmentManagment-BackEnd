@@ -8,8 +8,8 @@
 
 @baseUrl = http://localhost:8081
 
-@adminEmail = admin@test.com
-@adminPassword = $2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcflY0V3E/5t6dv3Vv4YFQy1z9e
+@staffEmail = staff@test.com
+@staffPassword = $2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcflY0V3E/5t6dv3Vv4YFQy1z9e
 
 @tenantEmail = [tenant@test.com](mailto:tenant@test.com)
 @tenantPassword = TenantPassword123
@@ -64,7 +64,7 @@ Content-Type: application/json
 
 ### ==========================================
 
-### TEST 4: REGISTER ADMIN - SHOULD FAIL
+### TEST 4: REGISTER STAFF - SHOULD FAIL
 
 ### ==========================================
 
@@ -72,11 +72,11 @@ POST {{baseUrl}}/auth/register
 Content-Type: application/json
 
 {
-"name": "Admin User",
+"name": "Staff User",
 "phone": "0811111111",
-"email": "{{adminEmail}}",
-"password": "{{adminPassword}}",
-"role": "ADMIN"
+"email": "{{staffEmail}}",
+"password": "{{staffPassword}}",
+"role": "STAFF"
 }
 
 ### ==========================================
@@ -97,18 +97,18 @@ Content-Type: application/json
 
 ### ==========================================
 
-### TEST 6: LOGIN ADMIN
+### TEST 6: LOGIN STAFF
 
 ### ==========================================
 
-# @name loginAdmin
+# @name loginStaff
 
 POST {{baseUrl}}/auth/login
 Content-Type: application/json
 
 {
-"email": "{{adminEmail}}",
-"password": "{{adminPassword}}"
+"email": "{{staffEmail}}",
+"password": "{{staffPassword}}"
 }
 
 ### ==========================================
@@ -136,7 +136,7 @@ Content-Type: application/json
 
 POST {{baseUrl}}/user/create
 Content-Type: application/json
-Authorization: Bearer {{loginTenant.response.body.data.access_token}}
+Authorization: Bearer {{loginStaff.response.body.data.access_token}}
 
 {
 "name": "Tenant Created User",
@@ -148,16 +148,16 @@ Authorization: Bearer {{loginTenant.response.body.data.access_token}}
 
 ### ==========================================
 
-### TEST 9: ADMIN CREATE TENANT
+### TEST 9: STAFF CREATE TENANT
 
 ### ==========================================
 
 POST {{baseUrl}}/user/create
 Content-Type: application/json
-Authorization: Bearer {{loginAdmin.response.body.data.access_token}}
+Authorization: Bearer {{loginStaff.response.body.data.access_token}}
 
 {
-"name": "Created By Admin",
+"name": "Created By Staff",
 "phone": "0855555555",
 "email": "[createdtenant@test.com](mailto:createdtenant@test.com)",
 "password": "TenantPassword789",

@@ -131,13 +131,13 @@ func TestAuthService_Login_InvalidPassword(t *testing.T) {
 	assert.Contains(t, err.Error(), "invalid email or password")
 }
 
-func TestAuthService_Register_AdminRole(t *testing.T) {
-	defer cleanupTestUsers([]string{"adminuser@test.com"})
+func TestAuthService_Register_StaffRole(t *testing.T) {
+	defer cleanupTestUsers([]string{"staffuser@test.com"})
 
-	user, err := authService.Register("Admin User", "1234567890", "adminuser@test.com", "adminpass", "ADMIN")
+	user, err := authService.Register("Staff User", "1234567890", "staffuser@test.com", "staffpass", "STAFF")
 
 	require.NoError(t, err)
-	assert.Equal(t, "ADMIN", user.Role)
+	assert.Equal(t, "STAFF", user.Role)
 }
 
 func TestAuthService_Register_TenantRole(t *testing.T) {
@@ -170,15 +170,15 @@ func TestUserService_CreateUser_IncompleteRequest(t *testing.T) {
 	assert.Contains(t, err.Error(), "incomplete request body")
 }
 
-func TestUserService_CreateUser_AdminUser(t *testing.T) {
-	defer cleanupTestUsers([]string{"adminbyadmin@test.com"})
+func TestUserService_CreateUser_StaffUser(t *testing.T) {
+	defer cleanupTestUsers([]string{"staffbystaff@test.com"})
 
-	adminUser := model.NewUser("Admin", "1234567890", "adminbyadmin@test.com", "adminpass", "ADMIN")
+	staffUser := model.NewUser("Staff", "1234567890", "staffbystaff@test.com", "staffpass", "STAFF")
 
-	createdUser, err := userService.CreateUser(adminUser)
+	createdUser, err := userService.CreateUser(staffUser)
 
 	require.NoError(t, err)
-	assert.Equal(t, "ADMIN", createdUser.Role)
+	assert.Equal(t, "STAFF", createdUser.Role)
 }
 
 func TestUserService_DeleteUser_Success(t *testing.T) {
@@ -200,10 +200,10 @@ func TestUserService_DeleteUser_NotFound(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-func TestAuthService_Login_AdminUser(t *testing.T) {
-	defer cleanupTestUsers([]string{"adminlogin@test.com"})
+func TestAuthService_Login_StaffUser(t *testing.T) {
+	defer cleanupTestUsers([]string{"stafflogin@test.com"})
 
-	_, err := authService.Register("Admin Login", "1234567890", "adminlogin@test.com", "admin123", "ADMIN")
+	_, err := authService.Register("Staff Login", "1234567890", "stafflogin@test.com", "staff123", "STAFF")
 	require.NoError(t, err)
 
 	token, err := authService.Login(service.LoginRequest{
