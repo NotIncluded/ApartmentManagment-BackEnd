@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"net/http"
 	"os"
@@ -16,8 +17,12 @@ import (
 )
 
 func main() {
+	env := flag.String("e", "local", "environment (local|dev|setup)")
+	setup := flag.Bool("setup", false, "setup database")
+	flag.Parse()
 
-	err := godotenv.Load(".env.local")
+	envFile := ".env." + *env
+	err := godotenv.Load(envFile)
 	if err != nil {
 		fmt.Println("Error loading env file")
 	}
@@ -40,8 +45,22 @@ func main() {
 		panic("failed to connect database: " + err.Error())
 	}
 
-	db.AutoMigrate(&model.User{}, &model.Room{}, &model.Contract{}, &model.UtilityRate{}, &model.UtilityUsage{}, &model.Bill{}, &model.Payment{})
+	if *setup {
+		fmt.Println("Running initial setup (AutoMigrate)...")
 
+		db.AutoMigrate(
+			&model.User{},
+			&model.Room{},
+			&model.Contract{},
+			&model.UtilityRate{},
+			&model.UtilityUsage{},
+			&model.Bill{},
+			&model.Payment{},
+		)
+
+		fmt.Println("Setup completed!")
+		return
+	}
 	userRepo := repository.NewUserRepository(db)
 	userService := service.NewUserService(userRepo)
 	userController := controller.NewUserController(userService)

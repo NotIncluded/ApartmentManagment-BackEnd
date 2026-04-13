@@ -1,0 +1,32 @@
+## Docker Compose file for local development, includes both app and database services
+
+version: "3.8"
+
+services:
+  app:
+    build: .
+    container_name: apartment_app
+    ports:
+      - "8081:8081"
+    env_file:
+      - .env.local
+    depends_on:
+      - db
+    networks:
+      - apartment_network
+
+  db:
+    image: postgres:latest
+    container_name: apartment_db
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=mysecretpassword
+      - POSTGRES_DB=apartment
+    ports:
+      - "8080:5432"
+    networks:
+      - apartment_network
+
+networks:
+  apartment_network:
+    driver: bridge
