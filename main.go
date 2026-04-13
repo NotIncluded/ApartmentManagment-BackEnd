@@ -17,7 +17,7 @@ import (
 )
 
 func main() {
-	env := flag.String("e", "local", "environment (local|dev|setup)")
+	env := flag.String("e", "dev", "environment (local|dev)")
 	setup := flag.Bool("setup", false, "setup database")
 	flag.Parse()
 
