@@ -1,0 +1,11 @@
+# Docker Compose file for development environment, includes only the app service and connects to an external database
+version: "3.8"
+
+services:
+  app:
+    build: .
+    container_name: apartment_app
+    ports:
+      - "8081:8081"
+    env_file:
+      - .env.dev
