@@ -137,7 +137,7 @@ func TestRoomService_GetRoomByUserID_NoActiveContract_Error(t *testing.T) {
 	_, err = roomService.GetRoomByUserID(user.ID)
 
 	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "no active contract found")
+	assert.Contains(t, err.Error(), "tenant has no active contract")
 }
 
 func TestRoomService_GetRoomByUserID_ExpiredContract_Error(t *testing.T) {
@@ -163,12 +163,12 @@ func TestRoomService_GetRoomByUserID_ExpiredContract_Error(t *testing.T) {
 	_, err = roomService.GetRoomByUserID(user.ID)
 
 	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "no active contract found")
+	assert.Contains(t, err.Error(), "tenant has no active contract")
 }
 
 func TestRoomService_GetRoomByUserID_InactiveContract_Error(t *testing.T) {
 	setupRoomTestDB()
-	defer cleanupRoomAndContracts()
+	// defer cleanupRoomAndContracts()
 	initRoomServices()
 
 	// Create user and room
@@ -181,7 +181,7 @@ func TestRoomService_GetRoomByUserID_InactiveContract_Error(t *testing.T) {
 	now := time.Now()
 	startDate := now.AddDate(0, -1, 0)
 	endDate := now.AddDate(0, 1, 0)
-	contract, err := createTestContract(user.ID, room.ID, startDate, endDate, "Pending")
+	contract, err := createTestContract(user.ID, room.ID, startDate, endDate, string(model.ContractStatusInactive))
 	require.NoError(t, err)
 	require.NotNil(t, contract)
 
@@ -189,7 +189,7 @@ func TestRoomService_GetRoomByUserID_InactiveContract_Error(t *testing.T) {
 	_, err = roomService.GetRoomByUserID(user.ID)
 
 	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "no active contract found")
+	assert.Contains(t, err.Error(), "tenant has no active contract")
 }
 
 func TestRoomService_GetRoomByUserID_NonexistentRoom_Error(t *testing.T) {

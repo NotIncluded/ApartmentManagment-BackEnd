@@ -7,13 +7,20 @@ import (
 	"gorm.io/gorm"
 )
 
+type ContractStatus string
+
+const (
+	ContractStatusInactive ContractStatus = "Inactive"
+	ContractStatusActive   ContractStatus = "Active"
+)
+
 type Contract struct {
 	ID        string         `gorm:"type:char(36);primaryKey" json:"contract_id"`
 	UserID    string         `json:"user_id" gorm:"not null"`
 	RoomID    string         `json:"room_id" gorm:"not null"`
 	StartDate time.Time      `json:"start_date" gorm:"type:date;not null"`
 	EndDate   time.Time      `json:"end_date" gorm:"type:date"`
-	Status    string         `json:"status" gorm:"not null"`
+	Status    string         `json:"status" gorm:"not null;check:status IN ('Inactive','Active')"`
 	CreatedAt time.Time      `json:"created_at"`
 	UpdatedAt time.Time      `json:"updated_at"`
 	DeletedAt gorm.DeletedAt `gorm:"index" json:"deleted_at"`
