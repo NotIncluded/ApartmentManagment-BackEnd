@@ -1,0 +1,823 @@
+### ==========================================
+
+### APARTMENT SYSTEM - AUTH & USER MANAGEMENT TESTS
+
+### ==========================================
+
+### Variables
+
+@baseUrl = http://localhost:8081
+
+@staffEmail = staff@test.com
+@staffPassword = staffpass
+
+@tenantEmail = tenant@test.com
+@tenantPassword = TenantPassword123
+
+@tenantEmail2 = tenant2@test.com
+@tenantPassword2 = TenantPassword456
+
+### ==========================================
+
+### TEST 1: HEALTH CHECK
+
+### ==========================================
+
+GET {{baseUrl}}/health
+Accept: application/json
+
+### ==========================================
+
+### TEST 2: REGISTER TENANT
+
+### ==========================================
+
+# @name registerTenant
+
+POST {{baseUrl}}/auth/register
+Content-Type: application/json
+
+{
+"name": "John Tenant",
+"phone": "0812345678",
+"email": "{{tenantEmail}}",
+"password": "{{tenantPassword}}",
+"role": "TENANT"
+}
+
+### ==========================================
+
+### TEST 3: REGISTER SECOND TENANT
+
+### ==========================================
+
+POST {{baseUrl}}/auth/register
+Content-Type: application/json
+
+{
+"name": "Jane Tenant",
+"phone": "0887654321",
+"email": "{{tenantEmail2}}",
+"password": "{{tenantPassword2}}",
+"role": "TENANT"
+}
+
+### ==========================================
+
+### TEST 4: REGISTER STAFF
+
+### ==========================================
+
+POST {{baseUrl}}/auth/register
+Content-Type: application/json
+
+{
+"name": "Staff User",
+"phone": "0811111111",
+"email": "{{staffEmail}}",
+"password": "{{staffPassword}}",
+"role": "STAFF"
+}
+
+### ==========================================
+
+### TEST 5: LOGIN TENANT
+
+### ==========================================
+
+# @name loginTenant
+
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+"email": "{{tenantEmail}}",
+"password": "{{tenantPassword}}"
+}
+
+### ==========================================
+
+### TEST 6: LOGIN TENANT 2
+
+### ==========================================
+
+# @name loginTenant2
+
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+"email": "{{tenantEmail2}}",
+"password": "{{tenantPassword2}}"
+}
+
+### ==========================================
+
+### TEST 7: LOGIN STAFF
+
+### ==========================================
+
+# @name loginStaff
+
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+"email": "{{staffEmail}}",
+"password": "{{staffPassword}}"
+}
+
+### ==========================================
+
+### TEST 8: PROTECTED ROUTE - NO TOKEN
+
+### ==========================================
+
+POST {{baseUrl}}/users
+Content-Type: application/json
+
+{
+"name": "Unauthorized User",
+"phone": "0899999999",
+"email": "newuser@test.com",
+"password": "Password123",
+"role": "TENANT"
+}
+
+### ==========================================
+
+### TEST 9: TENANT TRY CREATE USER - SHOULD FAIL
+
+### ==========================================
+
+POST {{baseUrl}}/users
+Content-Type: application/json
+Authorization: Bearer {{loginTenant.response.body.data.access_token}}
+
+{
+"name": "Tenant Created User",
+"phone": "0899999999",
+"email": "tenantcreate@test.com",
+"password": "Password123",
+"role": "TENANT"
+}
+
+### ==========================================
+
+### TEST 10: STAFF CREATE TENANT
+
+### ==========================================
+
+# @name createdTenantByStaff
+
+POST {{baseUrl}}/users
+Content-Type: application/json
+Authorization: Bearer {{loginStaff.response.body.data.access_token}}
+
+{
+"name": "Created By Staff",
+"phone": "0855555555",
+"email": "createdtenant@test.com",
+"password": "TenantPassword789",
+"role": "TENANT"
+}
+
+### ==========================================
+
+### TEST 11: INVALID LOGIN
+
+### ==========================================
+
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+"email": "{{tenantEmail}}",
+"password": "WrongPassword"
+}
+
+### ==========================================
+
+### TEST 12: LOGIN NON EXISTENT USER
+
+### ==========================================
+
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+"email": "nonexistent@test.com",
+"password": "SomePassword"
+}
+
+### ==========================================
+
+### TEST 13: REGISTER MISSING FIELD
+
+### ==========================================
+
+POST {{baseUrl}}/auth/register
+Content-Type: application/json
+
+{
+"name": "Incomplete User",
+"email": "incomplete@test.com"
+}
+
+### ==========================================
+
+### TEST 14: DELETE USER WITHOUT TOKEN
+
+### ==========================================
+
+DELETE {{baseUrl}}/users/test-id
+
+### ==========================================
+
+### TEST 15: DELETE USER WITH TENANT TOKEN
+
+### ==========================================
+
+DELETE {{baseUrl}}/users/test-id
+Authorization: Bearer {{loginTenant.response.body.data.access_token}}
+
+### ==========================================
+
+### TEST 16: INVALID TOKEN
+
+### ==========================================
+
+POST {{baseUrl}}/users
+Content-Type: application/json
+Authorization: Bearer invalid.token.here
+
+{
+"name": "Test User",
+"phone": "0811112222",
+"email": "test@test.com",
+"password": "TestPassword123",
+"role": "TENANT"
+}
+
+### ==========================================
+
+### TEST 17: DUPLICATE EMAIL
+
+### ==========================================
+
+POST {{baseUrl}}/auth/register
+Content-Type: application/json
+
+{
+"name": "Duplicate Tenant",
+"phone": "0822222222",
+"email": "{{tenantEmail}}",
+"password": "DifferentPassword123",
+"role": "TENANT"
+}
+
+### ==========================================
+
+### GET /users - GET USERS BY ROLE (STAFF ONLY)
+
+### ==========================================
+
+### TEST 18: GET USERS BY ROLE - STAFF (TENANTS)
+
+### ==========================================
+
+GET {{baseUrl}}/users?role=TENANT
+Authorization: Bearer {{loginStaff.response.body.data.access_token}}
+
+### ==========================================
+
+### TEST 19: GET USERS BY ROLE - NO TOKEN
+
+### ==========================================
+
+GET {{baseUrl}}/users?role=TENANT
+
+### ==========================================
+
+### TEST 20: GET USERS BY ROLE - TENANT (SHOULD FAIL)
+
+### ==========================================
+
+GET {{baseUrl}}/users?role=TENANT
+Authorization: Bearer {{loginTenant.response.body.data.access_token}}
+
+### ==========================================
+
+### TEST 21: GET USERS BY ROLE - INVALID ROLE
+
+### ==========================================
+
+GET {{baseUrl}}/users?role=INVALID_ROLE
+Authorization: Bearer {{loginStaff.response.body.data.access_token}}
+
+### ==========================================
+
+### TEST 22: GET USERS - MISSING ROLE PARAM
+
+### ==========================================
+
+GET {{baseUrl}}/users
+Authorization: Bearer {{loginStaff.response.body.data.access_token}}
+
+### ==========================================
+
+### TEST 23: GET USERS BY ROLE - STAFF (ALL STAFF)
+
+### ==========================================
+
+GET {{baseUrl}}/users?role=STAFF
+Authorization: Bearer {{loginStaff.response.body.data.access_token}}
+
+### ==========================================
+
+### GET /users/:id - GET USER BY ID
+
+### ==========================================
+
+### TEST 24: GET USER BY ID - STAFF
+
+### ==========================================
+
+GET {{baseUrl}}/users/{{loginTenant.response.body.data.user.id}}
+Authorization: Bearer {{loginStaff.response.body.data.access_token}}
+
+### ==========================================
+
+### TEST 25: GET USER BY ID - TENANT OWN PROFILE
+
+### ==========================================
+
+GET {{baseUrl}}/users/{{loginTenant.response.body.data.user.id}}
+Authorization: Bearer {{loginTenant.response.body.data.access_token}}
+
+### ==========================================
+
+### TEST 26: GET USER BY ID - TENANT OTHER PROFILE (SHOULD FAIL)
+
+### ==========================================
+
+GET {{baseUrl}}/users/{{loginTenant2.response.body.data.user.id}}
+Authorization: Bearer {{loginTenant.response.body.data.access_token}}
+
+### ==========================================
+
+### TEST 27: GET USER BY ID - NO TOKEN (SHOULD FAIL)
+
+### ==========================================
+
+GET {{baseUrl}}/users/{{loginTenant.response.body.data.user.id}}
+
+### ==========================================
+
+### TEST 28: GET USER BY ID - INVALID TOKEN (SHOULD FAIL)
+
+### ==========================================
+
+GET {{baseUrl}}/users/{{loginTenant.response.body.data.user.id}}
+Authorization: Bearer invalid.token.here
+
+### ==========================================
+
+### TEST 29: GET NON EXISTENT USER BY ID
+
+### ==========================================
+
+GET {{baseUrl}}/users/non-existent-user-id
+Authorization: Bearer {{loginStaff.response.body.data.access_token}}
+
+### ==========================================
+
+### PUT /users/:id - UPDATE USER
+
+### ==========================================
+
+### TEST 30: UPDATE USER BY TENANT - OWN PROFILE
+
+### ==========================================
+
+PUT {{baseUrl}}/users/{{loginTenant.response.body.data.user.id}}
+Content-Type: application/json
+Authorization: Bearer {{loginTenant.response.body.data.access_token}}
+
+{
+"name": "Updated Tenant Name",
+"phone": "0899998888"
+}
+
+### ==========================================
+
+### TEST 31: UPDATE USER BY TENANT - OTHER USER (SHOULD FAIL)
+
+### ==========================================
+
+PUT {{baseUrl}}/users/{{loginTenant2.response.body.data.user.id}}
+Content-Type: application/json
+Authorization: Bearer {{loginTenant.response.body.data.access_token}}
+
+{
+"name": "Hacked Name",
+"phone": "0800000000"
+}
+
+### ==========================================
+
+### TEST 32: UPDATE USER BY STAFF - OTHER USER
+
+### ==========================================
+
+PUT {{baseUrl}}/users/{{loginTenant2.response.body.data.user.id}}
+Content-Type: application/json
+Authorization: Bearer {{loginStaff.response.body.data.access_token}}
+
+{
+"name": "Staff Updated Name",
+"phone": "0877777777"
+}
+
+### ==========================================
+
+### TEST 33: UPDATE USER - NO TOKEN (SHOULD FAIL)
+
+### ==========================================
+
+PUT {{baseUrl}}/users/{{loginTenant.response.body.data.user.id}}
+Content-Type: application/json
+
+{
+"name": "No Token Update",
+"phone": "0800000000"
+}
+
+### ==========================================
+
+### TEST 34: UPDATE USER - INVALID TOKEN (SHOULD FAIL)
+
+### ==========================================
+
+PUT {{baseUrl}}/users/{{loginTenant.response.body.data.user.id}}
+Content-Type: application/json
+Authorization: Bearer invalid.token.here
+
+{
+"name": "Invalid Token Update",
+"phone": "0800000000"
+}
+
+### ==========================================
+
+### TEST 35: UPDATE USER - INVALID EMAIL FORMAT
+
+### ==========================================
+
+PUT {{baseUrl}}/users/{{loginTenant.response.body.data.user.id}}
+Content-Type: application/json
+Authorization: Bearer {{loginTenant.response.body.data.access_token}}
+
+{
+"email": "invalidemail",
+"phone": "0899998888"
+}
+
+### ==========================================
+
+### TEST 36: UPDATE USER - MISSING NAME AND EMAIL (SHOULD FAIL)
+
+### ==========================================
+
+PUT {{baseUrl}}/users/{{loginTenant.response.body.data.user.id}}
+Content-Type: application/json
+Authorization: Bearer {{loginTenant.response.body.data.access_token}}
+
+{
+"phone": "0899998888"
+}
+
+### ==========================================
+
+### TEST 37: UPDATE USER - EMPTY NAME (SHOULD FAIL)
+
+### ==========================================
+
+PUT {{baseUrl}}/users/{{loginTenant.response.body.data.user.id}}
+Content-Type: application/json
+Authorization: Bearer {{loginTenant.response.body.data.access_token}}
+
+{
+"name": "",
+"email": "valid@email.com"
+}
+
+### ==========================================
+
+### TEST 38: UPDATE NON EXISTENT USER
+
+### ==========================================
+
+PUT {{baseUrl}}/users/non-existent-user-id
+Content-Type: application/json
+Authorization: Bearer {{loginStaff.response.body.data.access_token}}
+
+{
+"name": "Test Update",
+"phone": "0812345678"
+}
+
+### ==========================================
+
+### DELETE /users/:id - DELETE USER
+
+### ==========================================
+
+### TEST 39: DELETE USER BY TENANT (SHOULD FAIL)
+
+### ==========================================
+
+DELETE {{baseUrl}}/users/{{loginTenant2.response.body.data.user.id}}
+Authorization: Bearer {{loginTenant.response.body.data.access_token}}
+
+### ==========================================
+
+### TEST 40: DELETE USER BY STAFF
+
+### ==========================================
+
+DELETE {{baseUrl}}/users/{{loginTenant2.response.body.data.user.id}}
+Authorization: Bearer {{loginStaff.response.body.data.access_token}}
+
+### ==========================================
+
+### TEST 41: DELETE USER - NO TOKEN (SHOULD FAIL)
+
+### ==========================================
+
+DELETE {{baseUrl}}/users/{{loginTenant.response.body.data.user.id}}
+
+### ==========================================
+
+### TEST 42: DELETE USER - INVALID TOKEN (SHOULD FAIL)
+
+### ==========================================
+
+DELETE {{baseUrl}}/users/{{loginTenant.response.body.data.user.id}}
+Authorization: Bearer invalid.token.here
+
+### ==========================================
+
+### TEST 43: DELETE NON EXISTENT USER
+
+### ==========================================
+
+DELETE {{baseUrl}}/users/non-existent-user-id
+Authorization: Bearer {{loginStaff.response.body.data.access_token}}
+
+### ==========================================
+
+### TEST 44: DELETE ALREADY DELETED USER
+
+### ==========================================
+
+DELETE {{baseUrl}}/users/{{loginTenant2.response.body.data.user.id}}
+Authorization: Bearer {{loginStaff.response.body.data.access_token}}
+
+### ==========================================
+
+### ADDITIONAL AUTH ERROR CASES
+
+### ==========================================
+
+### TEST 45: LOGIN WITH EMPTY EMAIL
+
+### ==========================================
+
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+"email": "",
+"password": "SomePassword123"
+}
+
+### ==========================================
+
+### TEST 46: LOGIN WITH EMPTY PASSWORD
+
+### ==========================================
+
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+"email": "tenant@test.com",
+"password": ""
+}
+
+### ==========================================
+
+### TEST 47: INVALID EMAIL FORMAT ON REGISTER
+
+### ==========================================
+
+POST {{baseUrl}}/auth/register
+Content-Type: application/json
+
+{
+"name": "Invalid Email User",
+"phone": "0812345678",
+"email": "notanemail",
+"password": "ValidPassword123",
+"role": "TENANT"
+}
+
+### ==========================================
+
+### TEST 48: WEAK PASSWORD - TOO SHORT
+
+### ==========================================
+
+POST {{baseUrl}}/auth/register
+Content-Type: application/json
+
+{
+"name": "Weak Password User",
+"phone": "0812345678",
+"email": "weakpass@test.com",
+"password": "123",
+"role": "TENANT"
+}
+
+### ==========================================
+
+### TEST 49: INVALID ROLE ON REGISTER
+
+### ==========================================
+
+POST {{baseUrl}}/auth/register
+Content-Type: application/json
+
+{
+"name": "Invalid Role User",
+"phone": "0812345678",
+"email": "invalidrole@test.com",
+"password": "ValidPassword123!",
+"role": "ADMIN"
+}
+
+### ==========================================
+
+### TEST 50: EMPTY NAME ON REGISTER
+
+### ==========================================
+
+POST {{baseUrl}}/auth/register
+Content-Type: application/json
+
+{
+"name": "",
+"phone": "0812345678",
+"email": "emptyname@test.com",
+"password": "ValidPassword123!",
+"role": "TENANT"
+}
+
+### ==========================================
+
+### TEST 51: INVALID PHONE FORMAT ON REGISTER
+
+### ==========================================
+
+POST {{baseUrl}}/auth/register
+Content-Type: application/json
+
+{
+"name": "Invalid Phone User",
+"phone": "abc123",
+"email": "invalidphone@test.com",
+"password": "ValidPassword123!",
+"role": "TENANT"
+}
+
+### ==========================================
+
+### TEST 52: PHONE TOO SHORT ON REGISTER
+
+### ==========================================
+
+POST {{baseUrl}}/auth/register
+Content-Type: application/json
+
+{
+"name": "Short Phone User",
+"phone": "123",
+"email": "shortphone@test.com",
+"password": "ValidPassword123!",
+"role": "TENANT"
+}
+
+### ==========================================
+
+### TEST 53: CREATE USER - MISSING NAME
+
+### ==========================================
+
+POST {{baseUrl}}/users
+Content-Type: application/json
+Authorization: Bearer {{loginStaff.response.body.data.access_token}}
+
+{
+"phone": "0812345678",
+"email": "missingname@test.com",
+"password": "ValidPassword123!",
+"role": "TENANT"
+}
+
+### ==========================================
+
+### TEST 54: CREATE USER - MISSING EMAIL
+
+### ==========================================
+
+POST {{baseUrl}}/users
+Content-Type: application/json
+Authorization: Bearer {{loginStaff.response.body.data.access_token}}
+
+{
+"name": "Missing Email User",
+"phone": "0812345678",
+"password": "ValidPassword123!",
+"role": "TENANT"
+}
+
+### ==========================================
+
+### TEST 55: CREATE USER - MISSING PASSWORD
+
+### ==========================================
+
+POST {{baseUrl}}/users
+Content-Type: application/json
+Authorization: Bearer {{loginStaff.response.body.data.access_token}}
+
+{
+"name": "Missing Password User",
+"phone": "0812345678",
+"email": "missingpass@test.com",
+"role": "TENANT"
+}
+
+### ==========================================
+
+### TEST 56: CREATE USER - MISSING ROLE
+
+### ==========================================
+
+POST {{baseUrl}}/users
+Content-Type: application/json
+Authorization: Bearer {{loginStaff.response.body.data.access_token}}
+
+{
+"name": "Missing Role User",
+"phone": "0812345678",
+"email": "missingrole@test.com",
+"password": "ValidPassword123!"
+}
+
+### ==========================================
+
+### TEST 57: CREATE USER - INVALID ROLE
+
+### ==========================================
+
+POST {{baseUrl}}/users
+Content-Type: application/json
+Authorization: Bearer {{loginStaff.response.body.data.access_token}}
+
+{
+"name": "Invalid Role Staff User",
+"phone": "0812345678",
+"email": "invalidrole@test.com",
+"password": "ValidPassword123!",
+"role": "ADMIN"
+}
+
+### ==========================================
+
+### TEST 58: CREATE USER - STAFF TRY CREATE STAFF (SHOULD FAIL)
+
+### ==========================================
+
+POST {{baseUrl}}/users
+Content-Type: application/json
+Authorization: Bearer {{loginStaff.response.body.data.access_token}}
+
+{
+"name": "Staff Created Staff",
+"phone": "0812345678",
+"email": "newstaff@test.com",
+"password": "ValidPassword123!",
+"role": "STAFF"
+}

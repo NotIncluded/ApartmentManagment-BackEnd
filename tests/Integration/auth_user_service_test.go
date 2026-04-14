@@ -1,4 +1,4 @@
-package auth_user_service_integration
+package integration
 
 import (
 	"os"
@@ -10,12 +10,17 @@ import (
 	"github.com/PunMung-66/ApartmentSys/service"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	_ "gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
 
 const (
-	testDBName = "apartment_test.db"
-	jwtSecret  = "test_jwt_secret_key"
+	testDBName     = "apartment_test"
+	jwtSecret      = "test_jwt_secret_key"
+	testDBHost     = "3.80.58.141"
+	testDBUser     = "postgres"
+	testDBPassword = "mysecretpassword"
+	testDBPort     = "5432"
 )
 
 var (
@@ -27,15 +32,17 @@ var (
 
 func TestMain(m *testing.M) {
 	setupTestDB()
+	resetTestDB()
 	runTests := m.Run()
-	teardownTestDB()
+	// teardownTestDB()
 	os.Exit(runTests)
 }
 
 func setupTestDB() {
-	if _, err := os.Stat(testDBName); err == nil {
-		os.Remove(testDBName)
-	}
+	os.Setenv("DB_HOST", testDBHost)
+	os.Setenv("DB_USER", testDBUser)
+	os.Setenv("DB_PASSWORD", testDBPassword)
+	os.Setenv("DB_PORT", testDBPort)
 
 	db, err := config.ConnectTestDatabase(testDBName)
 	if err != nil {
@@ -50,15 +57,19 @@ func setupTestDB() {
 	userService = service.NewUserService(userRepo)
 }
 
+func resetTestDB() {
+	if testDB != nil {
+		testDB.Exec("TRUNCATE TABLE users CASCADE")
+	}
+}
+
 func teardownTestDB() {
 	if testDB != nil {
+		testDB.Exec("TRUNCATE TABLE users CASCADE")
 		sqlDB, err := testDB.DB()
 		if err == nil {
 			sqlDB.Close()
 		}
-	}
-	if _, err := os.Stat(testDBName); err == nil {
-		os.Remove(testDBName)
 	}
 }
 
@@ -131,13 +142,13 @@ func TestAuthService_Login_InvalidPassword(t *testing.T) {
 	assert.Contains(t, err.Error(), "invalid email or password")
 }
 
-func TestAuthService_Register_AdminRole(t *testing.T) {
-	defer cleanupTestUsers([]string{"adminuser@test.com"})
+func TestAuthService_Register_StaffRole(t *testing.T) {
+	// defer cleanupTestUsers([]string{"staffuser@test.com"})
 
-	user, err := authService.Register("Admin User", "1234567890", "adminuser@test.com", "adminpass", "ADMIN")
+	user, err := authService.Register("Staff User", "1234567890", "staffuser@test.com", "staffpass", "STAFF")
 
 	require.NoError(t, err)
-	assert.Equal(t, "ADMIN", user.Role)
+	assert.Equal(t, "STAFF", user.Role)
 }
 
 func TestAuthService_Register_TenantRole(t *testing.T) {
@@ -170,18 +181,18 @@ func TestUserService_CreateUser_IncompleteRequest(t *testing.T) {
 	assert.Contains(t, err.Error(), "incomplete request body")
 }
 
-func TestUserService_CreateUser_AdminUser(t *testing.T) {
-	defer cleanupTestUsers([]string{"adminbyadmin@test.com"})
+func TestUserService_CreateUser_StaffUser(t *testing.T) {
+	defer cleanupTestUsers([]string{"staffbystaff@test.com"})
 
-	adminUser := model.NewUser("Admin", "1234567890", "adminbyadmin@test.com", "adminpass", "ADMIN")
+	staffUser := model.NewUser("Staff", "1234567890", "staffbystaff@test.com", "staffpass", "STAFF")
 
-	createdUser, err := userService.CreateUser(adminUser)
+	createdUser, err := userService.CreateUser(staffUser)
 
 	require.NoError(t, err)
-	assert.Equal(t, "ADMIN", createdUser.Role)
+	assert.Equal(t, "STAFF", createdUser.Role)
 }
 
-func TestUserService_DeleteUser_Success(t *testing.T) {
+func TC10_TestUserService_DeleteUser_Success(t *testing.T) {
 	defer cleanupTestUsers([]string{"deleteuser@test.com"})
 
 	user, err := authService.Register("Delete User", "1234567890", "deleteuser@test.com", "password123", "TENANT")
@@ -194,44 +205,45 @@ func TestUserService_DeleteUser_Success(t *testing.T) {
 	assert.Error(t, err)
 }
 
-func TestUserService_DeleteUser_NotFound(t *testing.T) {
+func TC11_TestUserService_DeleteUser_NotFound(t *testing.T) {
 	err := userService.DeleteUser("non-existent-id")
 
-	assert.NoError(t, err)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "record not found")
 }
 
-func TestAuthService_Login_AdminUser(t *testing.T) {
-	defer cleanupTestUsers([]string{"adminlogin@test.com"})
+func TC12_TestAuthService_Login_StaffUser(t *testing.T) {
+	defer cleanupTestUsers([]string{"stafflogin@test.com"})
 
-	_, err := authService.Register("Admin Login", "1234567890", "adminlogin@test.com", "admin123", "ADMIN")
+	_, err := authService.Register("Staff Login", "1234567890", "stafflogin@test.com", "staff123", "STAFF")
 	require.NoError(t, err)
 
 	token, err := authService.Login(service.LoginRequest{
-		Email:    "adminlogin@test.com",
-		Password: "admin123",
+		Email:    "stafflogin@test.com",
+		Password: "staff123",
 	}, []byte(jwtSecret))
 
 	require.NoError(t, err)
 	assert.NotEmpty(t, token)
 }
 
-func TestPermissionRestrictions_AdminVsTenant(t *testing.T) {
-	defer cleanupTestUsers([]string{"adminperm@test.com", "tenantperm@test.com"})
+func TC13_TestPermissionRestrictions_StaffVsTenant(t *testing.T) {
+	defer cleanupTestUsers([]string{"staffperm@test.com", "tenantperm@test.com"})
 
-	adminUser, err := authService.Register("Admin Perm", "1234567890", "adminperm@test.com", "adminpass", "ADMIN")
+	staffUser, err := authService.Register("Staff Perm", "1234567890", "staffperm@test.com", "staffpass", "STAFF")
 	require.NoError(t, err)
-	assert.Equal(t, "ADMIN", adminUser.Role)
+	assert.Equal(t, "STAFF", staffUser.Role)
 
 	tenantUser, err := authService.Register("Tenant Perm", "1234567890", "tenantperm@test.com", "tenantpass", "TENANT")
 	require.NoError(t, err)
 	assert.Equal(t, "TENANT", tenantUser.Role)
 
-	adminToken, err := authService.Login(service.LoginRequest{
-		Email:    "adminperm@test.com",
-		Password: "adminpass",
+	staffToken, err := authService.Login(service.LoginRequest{
+		Email:    "staffperm@test.com",
+		Password: "staffpass",
 	}, []byte(jwtSecret))
 	require.NoError(t, err)
-	assert.NotEmpty(t, adminToken)
+	assert.NotEmpty(t, staffToken)
 
 	tenantToken, err := authService.Login(service.LoginRequest{
 		Email:    "tenantperm@test.com",
@@ -240,10 +252,10 @@ func TestPermissionRestrictions_AdminVsTenant(t *testing.T) {
 	require.NoError(t, err)
 	assert.NotEmpty(t, tenantToken)
 
-	assert.NotEqual(t, adminToken, tenantToken)
+	assert.NotEqual(t, staffToken, tenantToken)
 }
 
-func TestUserService_CreateUser_DuplicateEmail(t *testing.T) {
+func TC14_TestUserService_CreateUser_DuplicateEmail(t *testing.T) {
 	defer cleanupTestUsers([]string{"servicedup@test.com"})
 
 	user1 := model.NewUser("First", "1234567890", "servicedup@test.com", "pass1", "TENANT")
@@ -256,7 +268,7 @@ func TestUserService_CreateUser_DuplicateEmail(t *testing.T) {
 	assert.Error(t, err)
 }
 
-func TestUserService_MultipleTenants(t *testing.T) {
+func TC15_TestUserService_MultipleTenants(t *testing.T) {
 	defer cleanupTestUsers([]string{"tenant1@test.com", "tenant2@test.com", "tenant3@test.com"})
 
 	tenants := []struct {

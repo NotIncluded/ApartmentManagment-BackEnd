@@ -30,14 +30,40 @@ func (s *UserService) CreateUser(user *model.User) (*model.User, error) {
 	return userResponse, nil
 }
 
-func (s *UserService) DeleteUser(userID string) error {
-	user := &model.User{}
-	user.ID = userID
+func (s *UserService) GetUserByID(userID string) (*model.User, error) {
+	user, err := s.userRepo.FindUserByID(userID)
+	if err != nil {
+		return nil, err
+	}
+	return user, nil
+}
 
-	err := s.userRepo.DeleteUser(user)
+func (s *UserService) GetUsersByRole(role string) ([]model.User, error) {
+	users, err := s.userRepo.FindUsersByRole(role)
+	if err != nil {
+		return nil, err
+	}
+	return users, nil
+}
+
+func (s *UserService) UpdateUser(user *model.User) (*model.User, error) {
+	if user.Name == "" || user.Email == "" {
+		return nil, errors.New("incomplete request body")
+	}
+
+	updatedUser, err := s.userRepo.UpdateUser(user)
+	if err != nil {
+		return nil, err
+	}
+
+	return updatedUser, nil
+}
+
+func (s *UserService) DeleteUser(userID string) error {
+	user, err := s.userRepo.FindUserByID(userID)
 	if err != nil {
 		return err
 	}
 
-	return nil
+	return s.userRepo.DeleteUser(user)
 }

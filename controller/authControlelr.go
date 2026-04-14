@@ -91,11 +91,11 @@ func (ac *AuthController) RegisterHandler(c *gin.Context) {
 		return
 	}
 
-	// Reject if trying to set ADMIN role during registration
-	if req.Role == "ADMIN" {
+	// Reject if trying to set STAFF role during registration
+	if req.Role == "STAFF" {
 		appErr := response.NewAppResponse(
 			http.StatusBadRequest,
-			"Cannot set ADMIN role during tenant registration",
+			"Cannot set STAFF role during tenant registration",
 			nil,
 		)
 		c.JSON(appErr.Status, appErr.Response())
