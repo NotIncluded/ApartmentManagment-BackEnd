@@ -1,4 +1,4 @@
-package auth_user_service_integration
+package integration
 
 import (
 	"testing"
