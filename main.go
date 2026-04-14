@@ -74,6 +74,21 @@ func main() {
 		userRoute.DELETE("/:id", auth.Protect([]byte(secret), "STAFF"), userController.DeleteUser)
 	}
 
+	roomRepo := repository.NewRoomRepository(db)
+	contractRepo := repository.NewContractRepository(db)
+	roomService := service.NewRoomService(roomRepo, contractRepo)
+	roomController := controller.NewRoomController(roomService)
+
+	roomRoute := r.Group("/rooms")
+	{
+		roomRoute.GET("/", auth.Protect([]byte(secret), "STAFF", "TENANT"), roomController.GetListRoom)
+	}
+
+	meRoute := r.Group("/me")
+	{
+		meRoute.GET("/room", auth.Protect([]byte(secret), "TENANT"), roomController.GetMyRoom)
+	}
+
 	authService := service.NewAuthService(userRepo)
 	authController := controller.NewAuthController(authService, []byte(secret))
 

@@ -34,7 +34,7 @@ func TestMain(m *testing.M) {
 	setupTestDB()
 	resetTestDB()
 	runTests := m.Run()
-	// teardownTestDB()
+	teardownTestDB()
 	os.Exit(runTests)
 }
 
@@ -143,7 +143,7 @@ func TestAuthService_Login_InvalidPassword(t *testing.T) {
 }
 
 func TestAuthService_Register_StaffRole(t *testing.T) {
-	// defer cleanupTestUsers([]string{"staffuser@test.com"})
+	defer cleanupTestUsers([]string{"staffuser@test.com"})
 
 	user, err := authService.Register("Staff User", "1234567890", "staffuser@test.com", "staffpass", "STAFF")
 
