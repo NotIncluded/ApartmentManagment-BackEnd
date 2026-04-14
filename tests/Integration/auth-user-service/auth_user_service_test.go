@@ -34,7 +34,7 @@ func TestMain(m *testing.M) {
 	setupTestDB()
 	resetTestDB()
 	runTests := m.Run()
-	teardownTestDB()
+	// teardownTestDB()
 	os.Exit(runTests)
 }
 
@@ -79,7 +79,7 @@ func cleanupTestUsers(emails []string) {
 	}
 }
 
-func TC01_TestAuthService_Register_Success(t *testing.T) {
+func TestAuthService_Register_Success(t *testing.T) {
 	defer cleanupTestUsers([]string{"newuser@test.com"})
 
 	user, err := authService.Register("New User", "1234567890", "newuser@test.com", "password123", "TENANT")
@@ -91,7 +91,7 @@ func TC01_TestAuthService_Register_Success(t *testing.T) {
 	assert.Equal(t, "New User", user.Name)
 }
 
-func TC02_TestAuthService_Register_DuplicateEmail(t *testing.T) {
+func TestAuthService_Register_DuplicateEmail(t *testing.T) {
 	defer cleanupTestUsers([]string{"duplicate@test.com"})
 
 	_, err := authService.Register("First User", "1234567890", "duplicate@test.com", "password123", "TENANT")
@@ -102,7 +102,7 @@ func TC02_TestAuthService_Register_DuplicateEmail(t *testing.T) {
 	assert.Contains(t, err.Error(), "email already exists")
 }
 
-func TC02_TestAuthService_Login_Success(t *testing.T) {
+func TestAuthService_Login_Success(t *testing.T) {
 	defer cleanupTestUsers([]string{"logintest@test.com"})
 
 	_, err := authService.Register("Login Test", "1234567890", "logintest@test.com", "password123", "TENANT")
@@ -117,7 +117,7 @@ func TC02_TestAuthService_Login_Success(t *testing.T) {
 	assert.NotEmpty(t, token)
 }
 
-func TC03_TestAuthService_Login_InvalidEmail(t *testing.T) {
+func TestAuthService_Login_InvalidEmail(t *testing.T) {
 	_, err := authService.Login(service.LoginRequest{
 		Email:    "nonexistent@test.com",
 		Password: "password123",
@@ -127,7 +127,7 @@ func TC03_TestAuthService_Login_InvalidEmail(t *testing.T) {
 	assert.Contains(t, err.Error(), "invalid email or password")
 }
 
-func TC04_TestAuthService_Login_InvalidPassword(t *testing.T) {
+func TestAuthService_Login_InvalidPassword(t *testing.T) {
 	defer cleanupTestUsers([]string{"wrongpass@test.com"})
 
 	_, err := authService.Register("Wrong Pass", "1234567890", "wrongpass@test.com", "correctpassword", "TENANT")
@@ -142,8 +142,8 @@ func TC04_TestAuthService_Login_InvalidPassword(t *testing.T) {
 	assert.Contains(t, err.Error(), "invalid email or password")
 }
 
-func TC05_TestAuthService_Register_StaffRole(t *testing.T) {
-	defer cleanupTestUsers([]string{"staffuser@test.com"})
+func TestAuthService_Register_StaffRole(t *testing.T) {
+	// defer cleanupTestUsers([]string{"staffuser@test.com"})
 
 	user, err := authService.Register("Staff User", "1234567890", "staffuser@test.com", "staffpass", "STAFF")
 
@@ -151,7 +151,7 @@ func TC05_TestAuthService_Register_StaffRole(t *testing.T) {
 	assert.Equal(t, "STAFF", user.Role)
 }
 
-func TC06_TestAuthService_Register_TenantRole(t *testing.T) {
+func TestAuthService_Register_TenantRole(t *testing.T) {
 	defer cleanupTestUsers([]string{"tenantuser@test.com"})
 
 	user, err := authService.Register("Tenant User", "1234567890", "tenantuser@test.com", "tenantpass", "TENANT")
@@ -160,7 +160,7 @@ func TC06_TestAuthService_Register_TenantRole(t *testing.T) {
 	assert.Equal(t, "TENANT", user.Role)
 }
 
-func TC07_TestUserService_CreateUser_Success(t *testing.T) {
+func TestUserService_CreateUser_Success(t *testing.T) {
 	defer cleanupTestUsers([]string{"servicecreate@test.com"})
 
 	user := model.NewUser("Service Create", "1234567890", "servicecreate@test.com", "password123", "TENANT")
@@ -172,7 +172,7 @@ func TC07_TestUserService_CreateUser_Success(t *testing.T) {
 	assert.Equal(t, "servicecreate@test.com", createdUser.Email)
 }
 
-func TC08_TestUserService_CreateUser_IncompleteRequest(t *testing.T) {
+func TestUserService_CreateUser_IncompleteRequest(t *testing.T) {
 	user := model.NewUser("", "1234567890", "incomplete@test.com", "password123", "TENANT")
 
 	_, err := userService.CreateUser(user)
@@ -181,7 +181,7 @@ func TC08_TestUserService_CreateUser_IncompleteRequest(t *testing.T) {
 	assert.Contains(t, err.Error(), "incomplete request body")
 }
 
-func TC09_TestUserService_CreateUser_StaffUser(t *testing.T) {
+func TestUserService_CreateUser_StaffUser(t *testing.T) {
 	defer cleanupTestUsers([]string{"staffbystaff@test.com"})
 
 	staffUser := model.NewUser("Staff", "1234567890", "staffbystaff@test.com", "staffpass", "STAFF")
