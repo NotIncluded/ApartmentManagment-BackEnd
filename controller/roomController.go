@@ -22,17 +22,6 @@ func NewRoomController(roomService *service.RoomService) *RoomController {
 // CreateRoom handles POST /rooms (STAFF only)
 // Creates a new room
 func (rc *RoomController) CreateRoom(c *gin.Context) {
-	role, _ := c.Get("role")
-	if role != "STAFF" {
-		res := response.NewAppResponse(
-			http.StatusForbidden,
-			"Access denied. Only STAFF can create rooms",
-			nil,
-		)
-		c.JSON(res.Status, res.Response())
-		return
-	}
-
 	var room model.Room
 	if err := c.ShouldBindJSON(&room); err != nil {
 		res := response.NewAppResponse(
@@ -66,17 +55,6 @@ func (rc *RoomController) CreateRoom(c *gin.Context) {
 // GetListRoom handles GET /rooms (STAFF only)
 // Returns all rooms
 func (rc *RoomController) GetListRoom(c *gin.Context) {
-	role, _ := c.Get("role")
-	if role != "STAFF" {
-		res := response.NewAppResponse(
-			http.StatusForbidden,
-			"Access denied. Only STAFF can view all rooms",
-			nil,
-		)
-		c.JSON(res.Status, res.Response())
-		return
-	}
-
 	rooms, err := rc.roomService.GetListRoom()
 	if err != nil {
 		res := response.NewAppResponse(
@@ -123,17 +101,6 @@ func (rc *RoomController) GetRoomByID(c *gin.Context) {
 // UpdateRoom handles PUT /rooms/{id} (STAFF only)
 // Updates room information
 func (rc *RoomController) UpdateRoom(c *gin.Context) {
-	role, _ := c.Get("role")
-	if role != "STAFF" {
-		res := response.NewAppResponse(
-			http.StatusForbidden,
-			"Access denied. Only STAFF can update rooms",
-			nil,
-		)
-		c.JSON(res.Status, res.Response())
-		return
-	}
-
 	roomID := c.Param("id")
 
 	var room model.Room
@@ -172,17 +139,6 @@ func (rc *RoomController) UpdateRoom(c *gin.Context) {
 // DeleteRoom handles DELETE /rooms/{id} (STAFF only)
 // Deletes room - cannot delete if room has any contract
 func (rc *RoomController) DeleteRoom(c *gin.Context) {
-	role, _ := c.Get("role")
-	if role != "STAFF" {
-		res := response.NewAppResponse(
-			http.StatusForbidden,
-			"Access denied. Only STAFF can delete rooms",
-			nil,
-		)
-		c.JSON(res.Status, res.Response())
-		return
-	}
-
 	roomID := c.Param("id")
 
 	err := rc.roomService.DeleteRoom(roomID)
@@ -218,17 +174,6 @@ func (rc *RoomController) DeleteRoom(c *gin.Context) {
 // GetRoomActiveContract handles GET /rooms/{id}/contract (STAFF only)
 // Returns the active contract of this room
 func (rc *RoomController) GetRoomActiveContract(c *gin.Context) {
-	role, _ := c.Get("role")
-	if role != "STAFF" {
-		res := response.NewAppResponse(
-			http.StatusForbidden,
-			"Access denied. Only STAFF can view active contracts",
-			nil,
-		)
-		c.JSON(res.Status, res.Response())
-		return
-	}
-
 	roomID := c.Param("id")
 
 	contract, err := rc.roomService.GetRoomActiveContract(roomID)
@@ -253,17 +198,6 @@ func (rc *RoomController) GetRoomActiveContract(c *gin.Context) {
 // GetRoomContractHistory handles GET /rooms/{id}/contracts (STAFF only)
 // Returns contract history for this room
 func (rc *RoomController) GetRoomContractHistory(c *gin.Context) {
-	role, _ := c.Get("role")
-	if role != "STAFF" {
-		res := response.NewAppResponse(
-			http.StatusForbidden,
-			"Access denied. Only STAFF can view contract history",
-			nil,
-		)
-		c.JSON(res.Status, res.Response())
-		return
-	}
-
 	roomID := c.Param("id")
 
 	contracts, err := rc.roomService.GetRoomContractHistory(roomID)
@@ -288,17 +222,6 @@ func (rc *RoomController) GetRoomContractHistory(c *gin.Context) {
 // GetRoomTenant handles GET /rooms/{id}/tenant (STAFF only)
 // Returns current tenant via active contract
 func (rc *RoomController) GetRoomTenant(c *gin.Context) {
-	role, _ := c.Get("role")
-	if role != "STAFF" {
-		res := response.NewAppResponse(
-			http.StatusForbidden,
-			"Access denied. Only STAFF can view tenant information",
-			nil,
-		)
-		c.JSON(res.Status, res.Response())
-		return
-	}
-
 	roomID := c.Param("id")
 
 	user, err := rc.roomService.GetRoomTenant(roomID)
@@ -324,17 +247,6 @@ func (rc *RoomController) GetRoomTenant(c *gin.Context) {
 // Assigns tenant to room by creating a contract
 // Request body should include: userID, startDate, endDate, status
 func (rc *RoomController) AssignRoom(c *gin.Context) {
-	role, _ := c.Get("role")
-	if role != "STAFF" {
-		res := response.NewAppResponse(
-			http.StatusForbidden,
-			"Access denied. Only STAFF can assign rooms",
-			nil,
-		)
-		c.JSON(res.Status, res.Response())
-		return
-	}
-
 	roomID := c.Param("id")
 
 	var body struct {
