@@ -12,15 +12,15 @@ import (
 )
 
 var (
-	roomRepo     *repository.RoomRepository
-	contractRepo *repository.ContractRepository
-	roomService  *service.RoomService
+	roomRepo          *repository.RoomRepository
+	roomContractRepo  *repository.ContractRepository
+	roomService       *service.RoomService
 )
 
 func initRoomServices() {
 	roomRepo = repository.NewRoomRepository(testDB)
-	contractRepo = repository.NewContractRepository(testDB)
-	roomService = service.NewRoomService(roomRepo, contractRepo)
+	roomContractRepo = repository.NewContractRepository(testDB)
+	roomService = service.NewRoomService(roomRepo, roomContractRepo)
 }
 
 func setupRoomTestDB() {

@@ -3,6 +3,7 @@ package integration
 import (
 	"os"
 	"testing"
+	"flag"
 
 	"github.com/PunMung-66/ApartmentSys/config"
 	"github.com/PunMung-66/ApartmentSys/model"
@@ -17,10 +18,6 @@ import (
 const (
 	testDBName     = "apartment_test"
 	jwtSecret      = "test_jwt_secret_key"
-	testDBHost     = "3.80.58.141"
-	testDBUser     = "postgres"
-	testDBPassword = "mysecretpassword"
-	testDBPort     = "5432"
 )
 
 var (
@@ -28,21 +25,49 @@ var (
 	userRepo    *repository.UserRepository
 	authService *service.AuthService
 	userService *service.UserService
+	env string
 )
 
-func TestMain(m *testing.M) {
-	setupTestDB()
-	resetTestDB()
-	runTests := m.Run()
-	teardownTestDB()
-	os.Exit(runTests)
+func init() {
+	flag.StringVar(&env, "e", "local", "Environment: local | dev")
 }
 
-func setupTestDB() {
-	os.Setenv("DB_HOST", testDBHost)
-	os.Setenv("DB_USER", testDBUser)
-	os.Setenv("DB_PASSWORD", testDBPassword)
-	os.Setenv("DB_PORT", testDBPort)
+func TestMain(m *testing.M) {
+	flag.Parse() // IMPORTANT
+
+	setupTestDB(env)
+	resetTestDB()
+
+	code := m.Run()
+
+	// teardownTestDB()
+	os.Exit(code)
+}
+
+func setupTestDB(env string) {
+	var host, port, user, password string
+
+	switch env {
+	case "dev":
+		host = "3.80.58.141"
+		port = "5432"
+		user = "postgres"
+		password = "devpassword"
+
+	case "local":
+		host = "localhost"
+		port = "8080"
+		user = "postgres"
+		password = "mysecretpassword"
+
+	default:
+		panic("Invalid environment: " + env)
+	}
+
+	os.Setenv("DB_HOST", host)
+	os.Setenv("DB_USER", user)
+	os.Setenv("DB_PASSWORD", password)
+	os.Setenv("DB_PORT", port)
 
 	db, err := config.ConnectTestDatabase(testDBName)
 	if err != nil {

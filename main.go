@@ -77,15 +77,28 @@ func main() {
 	roomRepo := repository.NewRoomRepository(db)
 	contractRepo := repository.NewContractRepository(db)
 	roomService := service.NewRoomService(roomRepo, contractRepo)
+	roomService.SetUserRepository(userRepo) // Initialize user repo for tenant operations
 	roomController := controller.NewRoomController(roomService)
 
 	roomRoute := r.Group("/rooms")
 	{
-		roomRoute.GET("/", auth.Protect([]byte(secret), "STAFF", "TENANT"), roomController.GetListRoom)
+		// CRUD Operations (STAFF only)
+		roomRoute.POST("/", auth.Protect([]byte(secret), "STAFF"), roomController.CreateRoom)
+		roomRoute.GET("/", auth.Protect([]byte(secret), "STAFF"), roomController.GetListRoom)
+		roomRoute.GET("/:id", auth.Protect([]byte(secret), "STAFF"), roomController.GetRoomByID)
+		roomRoute.PUT("/:id", auth.Protect([]byte(secret), "STAFF"), roomController.UpdateRoom)
+		roomRoute.DELETE("/:id", auth.Protect([]byte(secret), "STAFF"), roomController.DeleteRoom)
+
+		// Relationship APIs (STAFF only)
+		roomRoute.GET("/:id/contract", auth.Protect([]byte(secret), "STAFF"), roomController.GetRoomActiveContract)
+		roomRoute.GET("/:id/contracts", auth.Protect([]byte(secret), "STAFF"), roomController.GetRoomContractHistory)
+		roomRoute.GET("/:id/tenant", auth.Protect([]byte(secret), "STAFF"), roomController.GetRoomTenant)
+		roomRoute.POST("/:id/assign", auth.Protect([]byte(secret), "STAFF"), roomController.AssignRoom)
 	}
 
 	meRoute := r.Group("/me")
 	{
+		// TENANT only endpoint
 		meRoute.GET("/room", auth.Protect([]byte(secret), "TENANT"), roomController.GetMyRoom)
 	}
 

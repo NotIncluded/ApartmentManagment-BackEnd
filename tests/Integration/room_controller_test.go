@@ -16,18 +16,19 @@ import (
 
 var (
 	roomController *controller.RoomController
+	roomServ       *service.RoomService
 )
 
 func initRoomController() {
 	roomRepo := repository.NewRoomRepository(testDB)
 	contractRepo := repository.NewContractRepository(testDB)
-	roomService := service.NewRoomService(roomRepo, contractRepo)
-	roomController = controller.NewRoomController(roomService)
+	roomServ = service.NewRoomService(roomRepo, contractRepo)
+	roomController = controller.NewRoomController(roomServ)
 }
 
 func TestRoomController_GetListRoom_STAFF_Success(t *testing.T) {
 	setupRoomTestDB()
-	// defer cleanupRoomAndContracts()
+	defer cleanupRoomAndContracts()
 	initRoomController()
 
 	// Create rooms
@@ -50,7 +51,7 @@ func TestRoomController_GetListRoom_STAFF_Success(t *testing.T) {
 	assert.Contains(t, w.Body.String(), "Rooms retrieved successfully")
 }
 
-func TestRoomController_GetListRoom_TENANT_WithActiveContract_Success(t *testing.T) {
+func TestRoomController_GetListRoom_TENANT_Forbidden(t *testing.T) {
 	setupRoomTestDB()
 	defer cleanupRoomAndContracts()
 	initRoomController()
@@ -78,36 +79,9 @@ func TestRoomController_GetListRoom_TENANT_WithActiveContract_Success(t *testing
 	// Call controller
 	roomController.GetListRoom(c)
 
-	// Assert
-	assert.Equal(t, http.StatusOK, w.Code)
-	assert.Contains(t, w.Body.String(), room.ID)
-	assert.Contains(t, w.Body.String(), "Room retrieved successfully")
-}
-
-func TestRoomController_GetListRoom_TENANT_NoActiveContract_Forbidden(t *testing.T) {
-	setupRoomTestDB()
-	defer cleanupRoomAndContracts()
-	initRoomController()
-
-	// Create user with NO contract
-	user, err := authService.Register("Tenant NoCtrl", "1111111111", "notenantctrl@test.com", "password123", "TENANT")
-	require.NoError(t, err)
-
-	// Create some rooms (tenant should not see them)
-	createTestRoom("801", 8, "Available")
-
-	// Create request with TENANT role
-	w := httptest.NewRecorder()
-	c, _ := gin.CreateTestContext(w)
-	c.Set("role", "TENANT")
-	c.Set("user_id", user.ID)
-
-	// Call controller
-	roomController.GetListRoom(c)
-
-	// Assert
+	// Assert - TENANT should be forbidden
 	assert.Equal(t, http.StatusForbidden, w.Code)
-	assert.Contains(t, w.Body.String(), "Access denied: tenant has no active contract")
+	assert.Contains(t, w.Body.String(), "Access denied")
 }
 
 func TestRoomController_GetMyRoom_TENANT_Success(t *testing.T) {
@@ -160,7 +134,7 @@ func TestRoomController_GetMyRoom_STAFF_Forbidden(t *testing.T) {
 
 	// Assert
 	assert.Equal(t, http.StatusForbidden, w.Code)
-	assert.Contains(t, w.Body.String(), "Only tenants can access this endpoint")
+	assert.Contains(t, w.Body.String(), "you have no active contract")
 }
 
 func TestRoomController_GetMyRoom_TENANT_NoActiveContract_Forbidden(t *testing.T) {
