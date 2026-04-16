@@ -10,6 +10,7 @@ import (
 	"github.com/PunMung-66/ApartmentSys/controller"
 	"github.com/PunMung-66/ApartmentSys/internal/auth"
 	"github.com/PunMung-66/ApartmentSys/model"
+	internalminio "github.com/PunMung-66/ApartmentSys/internal/minio"
 	"github.com/PunMung-66/ApartmentSys/repository"
 	"github.com/PunMung-66/ApartmentSys/service"
 	"github.com/gin-gonic/gin"
@@ -48,15 +49,37 @@ func main() {
 	if *setup {
 		fmt.Println("Running initial setup (AutoMigrate)...")
 
-		db.AutoMigrate(
-			&model.User{},
-			&model.Room{},
-			&model.Contract{},
-			&model.UtilityRate{},
-			&model.UtilityUsage{},
-			&model.Bill{},
-			&model.Payment{},
-		)
+		   db.AutoMigrate(
+			   &model.User{},
+			   &model.Room{},
+			   &model.Contract{},
+			   &model.UtilityRate{},
+			   &model.UtilityUsage{},
+			   &model.Bill{},
+			   &model.Payment{},
+			   &model.BillSlip{},
+		   )
+
+   // --- MinIO Setup ---
+   minioEndpoint := os.Getenv("MINIO_ENDPOINT")
+   minioAccessKey := os.Getenv("MINIO_ACCESS_KEY")
+   minioSecretKey := os.Getenv("MINIO_SECRET_KEY")
+   minioBucket := os.Getenv("MINIO_BUCKET")
+   minioUseSSL := os.Getenv("MINIO_USE_SSL") == "true"
+
+   minioClient, err := internalminio.NewMinioClient(minioEndpoint, minioAccessKey, minioSecretKey, minioBucket, minioUseSSL)
+   if err != nil {
+	   panic("failed to initialize MinIO client: " + err.Error())
+   }
+
+   billSlipRepo := repository.NewBillSlipRepository(db)
+   billSlipService := service.NewBillSlipService(billSlipRepo, minioClient)
+   billSlipController := controller.NewBillSlipController(billSlipService)
+
+   billSlipRoute := r.Group("/billslips")
+   {
+	   billSlipRoute.POST("/upload", billSlipController.UploadSlip)
+   }
 
 		fmt.Println("Setup completed!")
 		return
