@@ -74,6 +74,49 @@ func main() {
 		userRoute.DELETE("/:id", auth.Protect([]byte(secret), "STAFF"), userController.DeleteUser)
 	}
 
+	roomRepo := repository.NewRoomRepository(db)
+	contractRepo := repository.NewContractRepository(db)
+	roomService := service.NewRoomService(roomRepo, contractRepo)
+	roomService.SetUserRepository(userRepo) // Initialize user repo for tenant operations
+	roomController := controller.NewRoomController(roomService)
+
+	roomRoute := r.Group("/rooms")
+	{
+		// CRUD Operations (STAFF only)
+		roomRoute.POST("/", auth.Protect([]byte(secret), "STAFF"), roomController.CreateRoom)
+		roomRoute.GET("/", auth.Protect([]byte(secret), "STAFF"), roomController.GetListRoom)
+		roomRoute.GET("/:id", auth.Protect([]byte(secret), "STAFF"), roomController.GetRoomByID)
+		roomRoute.PUT("/:id", auth.Protect([]byte(secret), "STAFF"), roomController.UpdateRoom)
+		roomRoute.DELETE("/:id", auth.Protect([]byte(secret), "STAFF"), roomController.DeleteRoom)
+
+		// Relationship APIs (STAFF only)
+		roomRoute.GET("/:id/contract", auth.Protect([]byte(secret), "STAFF"), roomController.GetRoomActiveContract)
+		roomRoute.GET("/:id/contracts", auth.Protect([]byte(secret), "STAFF"), roomController.GetRoomContractHistory)
+		roomRoute.GET("/:id/tenant", auth.Protect([]byte(secret), "STAFF"), roomController.GetRoomTenant)
+		roomRoute.POST("/:id/assign", auth.Protect([]byte(secret), "STAFF"), roomController.AssignRoom)
+	}
+
+	contractService := service.NewContractService(contractRepo, roomRepo)
+	contractService.SetUserRepository(userRepo)
+	contractController := controller.NewContractController(contractService)
+
+	contractRoute := r.Group("/contracts")
+	{
+		contractRoute.POST("/", auth.Protect([]byte(secret), "STAFF"), contractController.CreateContract)
+		contractRoute.GET("/", auth.Protect([]byte(secret), "STAFF"), contractController.GetContracts)
+		contractRoute.GET("/:id", auth.Protect([]byte(secret), "STAFF"), contractController.GetContractByID)
+		contractRoute.PUT("/:id", auth.Protect([]byte(secret), "STAFF"), contractController.UpdateContract)
+		contractRoute.DELETE("/:id", auth.Protect([]byte(secret), "STAFF"), contractController.DeleteContract)
+		contractRoute.GET("/user/:userID", auth.Protect([]byte(secret), "STAFF"), contractController.GetContractsByUserID)
+		contractRoute.GET("/room/:roomID", auth.Protect([]byte(secret), "STAFF"), contractController.GetContractsByRoomID)
+	}
+
+	meRoute := r.Group("/me")
+	{
+		// TENANT only endpoint
+		meRoute.GET("/room", auth.Protect([]byte(secret), "TENANT"), roomController.GetMyRoom)
+	}
+
 	authService := service.NewAuthService(userRepo)
 	authController := controller.NewAuthController(authService, []byte(secret))
 
