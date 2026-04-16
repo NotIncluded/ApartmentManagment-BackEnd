@@ -32,9 +32,12 @@ func SetupTestRouter() *gin.Engine {
 	roomService := service.NewRoomService(roomRepo, contractRepo)
 	roomService.SetUserRepository(userRepo)
 	authService := service.NewAuthService(userRepo)
+	contractService := service.NewContractService(contractRepo, roomRepo)
+	contractService.SetUserRepository(userRepo)
 
 	userController := controller.NewUserController(userService)
 	roomController := controller.NewRoomController(roomService)
+	contractController := controller.NewContractController(contractService)
 	authController := controller.NewAuthController(authService, secret)
 
 	userRoute := r.Group("/users")
@@ -57,6 +60,17 @@ func SetupTestRouter() *gin.Engine {
 		roomRoute.GET("/:id/contracts", auth.Protect(secret, "STAFF"), roomController.GetRoomContractHistory)
 		roomRoute.GET("/:id/tenant", auth.Protect(secret, "STAFF"), roomController.GetRoomTenant)
 		roomRoute.POST("/:id/assign", auth.Protect(secret, "STAFF"), roomController.AssignRoom)
+	}
+
+	contractRoute := r.Group("/contracts")
+	{
+		contractRoute.POST("/", auth.Protect(secret, "STAFF"), contractController.CreateContract)
+		contractRoute.GET("/", auth.Protect(secret, "STAFF"), contractController.GetContracts)
+		contractRoute.GET("/:id", auth.Protect(secret, "STAFF"), contractController.GetContractByID)
+		contractRoute.PUT("/:id", auth.Protect(secret, "STAFF"), contractController.UpdateContract)
+		contractRoute.DELETE("/:id", auth.Protect(secret, "STAFF"), contractController.DeleteContract)
+		contractRoute.GET("/user/:userID", auth.Protect(secret, "STAFF"), contractController.GetContractsByUserID)
+		contractRoute.GET("/room/:roomID", auth.Protect(secret, "STAFF"), contractController.GetContractsByRoomID)
 	}
 
 	meRoute := r.Group("/me")

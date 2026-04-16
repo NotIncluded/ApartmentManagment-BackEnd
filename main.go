@@ -96,6 +96,21 @@ func main() {
 		roomRoute.POST("/:id/assign", auth.Protect([]byte(secret), "STAFF"), roomController.AssignRoom)
 	}
 
+	contractService := service.NewContractService(contractRepo, roomRepo)
+	contractService.SetUserRepository(userRepo)
+	contractController := controller.NewContractController(contractService)
+
+	contractRoute := r.Group("/contracts")
+	{
+		contractRoute.POST("/", auth.Protect([]byte(secret), "STAFF"), contractController.CreateContract)
+		contractRoute.GET("/", auth.Protect([]byte(secret), "STAFF"), contractController.GetContracts)
+		contractRoute.GET("/:id", auth.Protect([]byte(secret), "STAFF"), contractController.GetContractByID)
+		contractRoute.PUT("/:id", auth.Protect([]byte(secret), "STAFF"), contractController.UpdateContract)
+		contractRoute.DELETE("/:id", auth.Protect([]byte(secret), "STAFF"), contractController.DeleteContract)
+		contractRoute.GET("/user/:userID", auth.Protect([]byte(secret), "STAFF"), contractController.GetContractsByUserID)
+		contractRoute.GET("/room/:roomID", auth.Protect([]byte(secret), "STAFF"), contractController.GetContractsByRoomID)
+	}
+
 	meRoute := r.Group("/me")
 	{
 		// TENANT only endpoint

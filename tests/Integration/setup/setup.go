@@ -1,8 +1,10 @@
 package setup
 
 import (
+	"errors"
 	"flag"
 	"os"
+	"time"
 
 	"github.com/PunMung-66/ApartmentSys/config"
 	"github.com/PunMung-66/ApartmentSys/model"
@@ -156,10 +158,34 @@ func CreateTestContract(userID, roomID string, startDate, endDate string, status
 	if TestDB == nil {
 		panic("TestDB is nil - database not initialized. Make sure testmain_test.go exists in Integration package root")
 	}
+
+	var start, end time.Time
+	var err error
+
+	if startDate != "" {
+		start, err = time.Parse("2006-01-02", startDate)
+		if err != nil {
+			return nil, errors.New("invalid start date format")
+		}
+	} else {
+		start = time.Now()
+	}
+
+	if endDate != "" {
+		end, err = time.Parse("2006-01-02", endDate)
+		if err != nil {
+			return nil, errors.New("invalid end date format")
+		}
+	} else {
+		end = time.Now().AddDate(0, 6, 0)
+	}
+
 	contract := &model.Contract{
-		UserID: userID,
-		RoomID: roomID,
-		Status: status,
+		UserID:    userID,
+		RoomID:    roomID,
+		StartDate: start,
+		EndDate:   end,
+		Status:    status,
 	}
 
 	result := TestDB.Create(&contract)

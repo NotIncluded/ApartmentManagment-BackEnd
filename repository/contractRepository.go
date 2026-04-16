@@ -115,3 +115,21 @@ func (c *ContractRepository) DeleteContract(contractID string) error {
 	}
 	return nil
 }
+
+func (c *ContractRepository) FindAllContracts() ([]model.Contract, error) {
+	var contracts []model.Contract
+	result := c.db.Find(&contracts)
+	if result.Error != nil {
+		return nil, result.Error
+	}
+	return contracts, nil
+}
+
+func (c *ContractRepository) FindContractsByUserID(userID string) ([]model.Contract, error) {
+	var contracts []model.Contract
+	result := c.db.Where("user_id = ?", userID).Find(&contracts)
+	if result.Error != nil {
+		return nil, result.Error
+	}
+	return contracts, nil
+}
