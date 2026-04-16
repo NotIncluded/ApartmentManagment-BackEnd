@@ -99,3 +99,19 @@ func (c *ContractRepository) FindContractByID(contractID string) (*model.Contrac
 	}
 	return &contract, nil
 }
+
+func (c *ContractRepository) UpdateContract(contract *model.Contract) error {
+	result := c.db.Save(contract)
+	if result.Error != nil {
+		return result.Error
+	}
+	return nil
+}
+
+func (c *ContractRepository) DeleteContract(contractID string) error {
+	result := c.db.Where("id = ?", contractID).Delete(&model.Contract{})
+	if result.Error != nil {
+		return result.Error
+	}
+	return nil
+}
