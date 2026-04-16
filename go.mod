@@ -3,6 +3,7 @@ module github.com/PunMung-66/ApartmentSys
 go 1.25.6
 
 require (
+	github.com/gin-contrib/cors v1.7.2
 	github.com/gin-gonic/gin v1.12.0
 	github.com/google/uuid v1.3.0
 	github.com/joho/godotenv v1.5.1

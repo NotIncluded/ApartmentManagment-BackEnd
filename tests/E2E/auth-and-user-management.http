@@ -6,7 +6,7 @@
 
 ### Variables
 
-@baseUrl = http://localhost:8081
+@baseUrl = http://localhost:8080
 
 @staffEmail = staff@test.com
 @staffPassword = staffpass
