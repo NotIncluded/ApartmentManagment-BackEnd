@@ -9,9 +9,30 @@ import (
 	"testing"
 	"io"
 
+	// "github.com/PunMung-66/ApartmentSys/internal/auth"
 	"github.com/PunMung-66/ApartmentSys/tests/Integration/setup"
 	"github.com/stretchr/testify/assert"
+	"net/http/httptest"
+	// "strings"
 )
+// var secret = []byte(setup.JWTSecret)
+
+
+// MakeRequestWithBody sends a multipart/form-data request for testing
+func MakeRequestWithBody(method, path, token string, body *bytes.Buffer, contentType string) *httptest.ResponseRecorder {
+	req, _ := http.NewRequest(method, path, body)
+	if token != "" {
+		 req.Header.Set("Authorization", "Bearer "+token)
+	}
+	req.Header.Set("Content-Type", contentType)
+	w := httptest.NewRecorder()
+	// testRouter is defined in e2e_test.go, so we need to initialize it here if not already
+	if testRouter == nil {
+		 panic("testRouter is not initialized. Please run this test with other E2E tests or refactor helpers.")
+	}
+	testRouter.ServeHTTP(w, req)
+	return w
+}
 
 func setupBillSlipTest() {
 	setup.ResetTestDB()
