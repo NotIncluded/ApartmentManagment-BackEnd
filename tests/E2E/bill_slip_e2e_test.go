@@ -9,13 +9,10 @@ import (
 	"testing"
 	"io"
 
-	// "github.com/PunMung-66/ApartmentSys/internal/auth"
 	"github.com/PunMung-66/ApartmentSys/tests/Integration/setup"
 	"github.com/stretchr/testify/assert"
 	"net/http/httptest"
-	// "strings"
 )
-// var secret = []byte(setup.JWTSecret)
 
 
 // MakeRequestWithBody sends a multipart/form-data request for testing
@@ -48,39 +45,42 @@ func registerUserForSlipE2E(name, phone, email, role string) (*setup.User, strin
 	return user, token
 }
 
-func createTestBillAndRoom() (string, string) {
-	room := setup.CreateTestRoom("S101", 1, "Available")
-	bill := setup.CreateTestBill(room.ID)
-	return bill.ID, room.ID
+func createTestBillAndRoom(userID string) (string, string) {
+    room := setup.CreateTestRoom("S101", 1, "Available")
+    // 2. Pass the userID down into your bill helper!
+    bill := setup.CreateTestBill(userID, room.ID) 
+    return bill.ID, room.ID
 }
 
 func TestE2E_BillSlip_Upload_Success(t *testing.T) {
-	setupBillSlipTest()
-	defer cleanupBillSlipTest()
+    setupBillSlipTest()
+    defer cleanupBillSlipTest()
 
-	_, staffToken := registerUserForSlipE2E("Staff User", "1111111111", "slip_staff@test.com", "STAFF")
-	billID, roomID := createTestBillAndRoom()
+    // 3. Notice how we capture 'staffUser' here instead of ignoring it with an underscore '_'
+    staffUser, staffToken := registerUserForSlipE2E("Staff User", "1111111111", "slip_staff@test.com", "STAFF")
+    
+    // 4. Pass the real user's ID into our room/bill generator
+    billID, roomID := createTestBillAndRoom(staffUser.ID)
 
-	filePath := "testdata/test-slip.jpg" // Place a test image at this path
-	file, err := os.Open(filePath)
-	assert.NoError(t, err)
-	defer file.Close()
+    filePath := "testdata/test-slip.jpg" // Place a test image at this path
+    file, err := os.Open(filePath)
+    assert.NoError(t, err)
+    defer file.Close()
 
-	var b bytes.Buffer
-	w := multipart.NewWriter(&b)
-	_ = w.WriteField("bill_id", billID)
-	_ = w.WriteField("room_id", roomID)
-	fw, err := w.CreateFormFile("slip", filepath.Base(filePath))
-	assert.NoError(t, err)
-	_, err = file.Seek(0, 0)
-	assert.NoError(t, err)
-	_, err = io.Copy(fw, file)
-	assert.NoError(t, err)
-	w.Close()
+    var b bytes.Buffer
+    w := multipart.NewWriter(&b)
+    _ = w.WriteField("bill_id", billID)
+    _ = w.WriteField("room_id", roomID)
+    fw, err := w.CreateFormFile("slip", filepath.Base(filePath))
+    assert.NoError(t, err)
+    _, err = file.Seek(0, 0)
+    assert.NoError(t, err)
+    _, err = io.Copy(fw, file)
+    assert.NoError(t, err)
+    w.Close()
 
-	resp := MakeRequestWithBody("POST", "/billslips/upload", staffToken, &b, w.FormDataContentType())
-	// GenerateTestToken is imported from e2e_test.go
-	// MakeRequestWithBody is imported from e2e_test.go
-	assert.Equal(t, http.StatusOK, resp.Code)
-	assert.Contains(t, resp.Body.String(), "slip_url")
+    resp := MakeRequestWithBody("POST", "/billslips/upload", staffToken, &b, w.FormDataContentType())
+    
+    assert.Equal(t, http.StatusOK, resp.Code)
+    assert.Contains(t, resp.Body.String(), "slip_url")
 }

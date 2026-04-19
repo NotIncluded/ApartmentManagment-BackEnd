@@ -16,7 +16,7 @@ func NewBillSlipController(service *service.BillSlipService) *BillSlipController
 	return &BillSlipController{service: service}
 }
 
-func (ctrl *BillSlipController) UploadSlip(c *gin.Context) {
+func (ctrl *BillSlipController) UploadBillSlip(c *gin.Context) {
 	billID := c.PostForm("bill_id")
 	roomID := c.PostForm("room_id")
 	file, err := c.FormFile("slip")

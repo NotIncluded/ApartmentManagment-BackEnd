@@ -6,6 +6,7 @@ import (
 	"strings"
 	"testing"
 
+ 	"github.com/PunMung-66/ApartmentSys/internal/minio"
 	"github.com/PunMung-66/ApartmentSys/controller"
 	"github.com/PunMung-66/ApartmentSys/internal/auth"
 	"github.com/PunMung-66/ApartmentSys/repository"
@@ -27,6 +28,7 @@ func SetupTestRouter() *gin.Engine {
 	userRepo := repository.NewUserRepository(setup.TestDB)
 	roomRepo := repository.NewRoomRepository(setup.TestDB)
 	contractRepo := repository.NewContractRepository(setup.TestDB)
+	billSlipRepo := repository.NewBillSlipRepository(setup.TestDB)
 
 	userService := service.NewUserService(userRepo)
 	roomService := service.NewRoomService(roomRepo, contractRepo)
@@ -35,10 +37,20 @@ func SetupTestRouter() *gin.Engine {
 	contractService := service.NewContractService(contractRepo, roomRepo)
 	contractService.SetUserRepository(userRepo)
 
+	myMinioClient, _ := minio.NewMinioClient(
+			"localhost:9000", // Dummy endpoint
+			"minioadmin",     // Dummy access key
+			"minioadmin",     // Dummy secret
+			"test-bucket",    // Dummy bucket
+			false,
+		)
+    billSlipService := service.NewBillSlipService(billSlipRepo, myMinioClient)
+	
 	userController := controller.NewUserController(userService)
 	roomController := controller.NewRoomController(roomService)
 	contractController := controller.NewContractController(contractService)
 	authController := controller.NewAuthController(authService, secret)
+	billSlipController := controller.NewBillSlipController(billSlipService)
 
 	userRoute := r.Group("/users")
 	{
@@ -83,6 +95,10 @@ func SetupTestRouter() *gin.Engine {
 		authRoute.POST("/login", authController.LoginHandler)
 		authRoute.POST("/register", authController.RegisterHandler)
 	}
+	billSlipRoute := r.Group("/billslips")
+    {
+        billSlipRoute.POST("/upload", auth.Protect(secret, "STAFF"), billSlipController.UploadBillSlip)
+    }
 
 	return r
 }
