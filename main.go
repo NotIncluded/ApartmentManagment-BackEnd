@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/PunMung-66/ApartmentSys/config"
 	"github.com/PunMung-66/ApartmentSys/controller"
@@ -35,12 +36,17 @@ func main() {
 
 	// Enable CORS
 	r.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{"*"},
+		AllowOrigins: []string{
+			"http://localhost:5173",
+			"http://127.0.0.1:5173",
+			"http://localhost:3000",
+			"http://127.0.0.1:3000",
+		},
 		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"},
 		AllowHeaders:     []string{"Content-Type", "Authorization"},
 		ExposeHeaders:    []string{"Content-Length"},
 		AllowCredentials: true,
-		MaxAge:           12 * 3600,
+		MaxAge:           12 * time.Hour,
 	}))
 
 	r.GET("/health", func(c *gin.Context) {
@@ -78,8 +84,8 @@ func main() {
 
 	userRoute := r.Group("/users")
 	{
-		userRoute.POST("/", auth.Protect([]byte(secret), "STAFF"), userController.CreateUser)
-		userRoute.GET("/", auth.Protect([]byte(secret), "STAFF"), userController.GetUsersByRole)
+		userRoute.POST("", auth.Protect([]byte(secret), "STAFF"), userController.CreateUser)
+		userRoute.GET("", auth.Protect([]byte(secret), "STAFF"), userController.GetUsersByRole)
 		userRoute.GET("/:id", auth.Protect([]byte(secret), "STAFF", "TENANT"), userController.GetUserByID)
 		userRoute.PUT("/:id", auth.Protect([]byte(secret), "STAFF", "TENANT"), userController.UpdateUser)
 		userRoute.DELETE("/:id", auth.Protect([]byte(secret), "STAFF"), userController.DeleteUser)
@@ -94,8 +100,8 @@ func main() {
 	roomRoute := r.Group("/rooms")
 	{
 		// CRUD Operations (STAFF only)
-		roomRoute.POST("/", auth.Protect([]byte(secret), "STAFF"), roomController.CreateRoom)
-		roomRoute.GET("/", auth.Protect([]byte(secret), "STAFF"), roomController.GetListRoom)
+		roomRoute.POST("", auth.Protect([]byte(secret), "STAFF"), roomController.CreateRoom)
+		roomRoute.GET("", auth.Protect([]byte(secret), "STAFF"), roomController.GetListRoom)
 		roomRoute.GET("/:id", auth.Protect([]byte(secret), "STAFF"), roomController.GetRoomByID)
 		roomRoute.PUT("/:id", auth.Protect([]byte(secret), "STAFF"), roomController.UpdateRoom)
 		roomRoute.DELETE("/:id", auth.Protect([]byte(secret), "STAFF"), roomController.DeleteRoom)
@@ -113,8 +119,8 @@ func main() {
 
 	contractRoute := r.Group("/contracts")
 	{
-		contractRoute.POST("/", auth.Protect([]byte(secret), "STAFF"), contractController.CreateContract)
-		contractRoute.GET("/", auth.Protect([]byte(secret), "STAFF"), contractController.GetContracts)
+		contractRoute.POST("", auth.Protect([]byte(secret), "STAFF"), contractController.CreateContract)
+		contractRoute.GET("", auth.Protect([]byte(secret), "STAFF"), contractController.GetContracts)
 		contractRoute.GET("/:id", auth.Protect([]byte(secret), "STAFF"), contractController.GetContractByID)
 		contractRoute.PUT("/:id", auth.Protect([]byte(secret), "STAFF"), contractController.UpdateContract)
 		contractRoute.DELETE("/:id", auth.Protect([]byte(secret), "STAFF"), contractController.DeleteContract)
