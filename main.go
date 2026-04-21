@@ -10,7 +10,7 @@ import (
 	"github.com/PunMung-66/ApartmentSys/config"
 	"github.com/PunMung-66/ApartmentSys/controller"
 	"github.com/PunMung-66/ApartmentSys/internal/auth"
-	internalminio "github.com/PunMung-66/ApartmentSys/internal/minio"
+	// internalminio "github.com/PunMung-66/ApartmentSys/internal/minio"
 	"github.com/PunMung-66/ApartmentSys/model"
 	"github.com/PunMung-66/ApartmentSys/repository"
 	"github.com/PunMung-66/ApartmentSys/service"
@@ -136,26 +136,26 @@ func main() {
 		contractRoute.GET("/room/:roomID", auth.Protect([]byte(secret), "STAFF"), contractController.GetContractsByRoomID)
 	}
 
-	// ================= BILL SLIP (from main) =================
-	minioClient, err := internalminio.NewMinioClient(
-		os.Getenv("MINIO_ENDPOINT"),
-		os.Getenv("MINIO_ACCESS_KEY"),
-		os.Getenv("MINIO_SECRET_KEY"),
-		os.Getenv("MINIO_BUCKET"),
-		os.Getenv("MINIO_USE_SSL") == "true",
-	)
-	if err != nil {
-		panic("failed to initialize MinIO client: " + err.Error())
-	}
+	// // ================= BILL SLIP (from main) =================
+	// minioClient, err := internalminio.NewMinioClient(
+	// 	os.Getenv("MINIO_ENDPOINT"),
+	// 	os.Getenv("MINIO_ACCESS_KEY"),
+	// 	os.Getenv("MINIO_SECRET_KEY"),
+	// 	os.Getenv("MINIO_BUCKET"),
+	// 	os.Getenv("MINIO_USE_SSL") == "true",
+	// )
+	// if err != nil {
+	// 	panic("failed to initialize MinIO client: " + err.Error())
+	// }
 
-	billSlipRepo := repository.NewBillSlipRepository(db)
-	billSlipService := service.NewBillSlipService(billSlipRepo, minioClient)
-	billSlipController := controller.NewBillSlipController(billSlipService)
+	// billSlipRepo := repository.NewBillSlipRepository(db)
+	// billSlipService := service.NewBillSlipService(billSlipRepo, minioClient)
+	// billSlipController := controller.NewBillSlipController(billSlipService)
 
-	billSlipRoute := r.Group("/billslips")
-	{
-		billSlipRoute.POST("/upload", billSlipController.UploadSlip)
-	}
+	// billSlipRoute := r.Group("/billslips")
+	// {
+	// 	billSlipRoute.POST("/upload", billSlipController.UploadBillSlip)
+	// }
 
 	// ================= ME =================
 	meRoute := r.Group("/me")

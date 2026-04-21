@@ -67,7 +67,7 @@ func InitTestDatabase(environment string) {
 
 	case "local":
 		host = "localhost"
-		port = "8080"
+		port = "5433"
 		user = "postgres"
 		password = "mysecretpassword"
 
