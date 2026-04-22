@@ -1,0 +1,47 @@
+name: Integration Tests
+
+on:
+  pull_request:
+    branches: [ "main", "dev" ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Create .env file from secrets
+        run: |
+          cat <<EOF > .env
+          PORT=8080
+          JWT_SECRET=${{ secrets.JWT_SECRET }}
+          DB_HOST=db
+          DB_USER=${{ secrets.DB_USER }}
+          DB_PASSWORD=${{ secrets.DB_PASSWORD }}
+          DB_NAME=${{ secrets.DB_NAME }}
+          DB_PORT=5432
+          EOF
+
+      - name: Build and start services
+        run: |
+          docker compose up -d --build
+
+      - name: Wait for services
+        run: |
+          echo "Waiting for DB + app..."
+          sleep 15
+          docker ps
+
+      - name: Run integration tests
+        run: |
+          docker compose run --rm app go test ./tests/Integration/service -v
+
+      - name: Cleanup
+        if: always()
+        run: |
+          docker compose down -v

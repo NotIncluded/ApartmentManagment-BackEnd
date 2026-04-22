@@ -36,6 +36,7 @@ Thumbs.db
 local.env
 *.env.local
 *.env.dev
+*.env
 
 # Build output
 /bin/
