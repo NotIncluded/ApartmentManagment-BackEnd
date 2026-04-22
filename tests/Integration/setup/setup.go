@@ -2,14 +2,13 @@ package setup
 
 import (
 	"errors"
-	"flag"
-	"os"
 	"time"
 
 	"github.com/PunMung-66/ApartmentSys/config"
 	"github.com/PunMung-66/ApartmentSys/model"
 	"github.com/PunMung-66/ApartmentSys/repository"
 	"github.com/PunMung-66/ApartmentSys/service"
+	"github.com/joho/godotenv"
 	_ "gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
@@ -36,49 +35,29 @@ var (
 	RoomService  *service.RoomService
 	Env          string
 )
-
 func init() {
-	flag.StringVar(&Env, "e", "local", "Environment: local | dev")
-	// Auto-initialize database when setup package is imported by any subpackage
-	// This ensures tests work even when run with: go test ./tests/Integration/controller
 	if TestDB == nil {
-		InitTestDatabase(getEnv())
+		InitTestDatabase()
 	}
 }
 
-// getEnv returns the test environment, defaulting to "local"
-func getEnv() string {
-	if Env != "" {
-		return Env
+func getEnvFilePath(environment string) string {
+	switch environment {
+	case "local":
+		return "../../../.env.local"
+	case "dev":
+		return "../../../.env.dev"
+	default:
+		return "../../../.env"
 	}
-	return "local"
 }
 
 // InitTestDatabase initializes the test database connection
-func InitTestDatabase(environment string) {
-	var host, port, user, password string
-
-	switch environment {
-	case "dev":
-		host = "3.80.58.141"
-		port = "5432"
-		user = "postgres"
-		password = "devpassword"
-
-	case "local":
-		host = "localhost"
-		port = "5433"
-		user = "postgres"
-		password = "mysecretpassword"
-
-	default:
-		panic("Invalid environment: " + environment)
+func InitTestDatabase() {
+	envFile := getEnvFilePath("") // Default to local env for tests
+	if err := godotenv.Load(envFile); err != nil {
+		panic("Failed to load env file: " + envFile + " : " + err.Error())
 	}
-
-	os.Setenv("DB_HOST", host)
-	os.Setenv("DB_USER", user)
-	os.Setenv("DB_PASSWORD", password)
-	os.Setenv("DB_PORT", port)
 
 	db, err := config.ConnectTestDatabase(TestDBName)
 	if err != nil {

@@ -8,8 +8,8 @@ import (
 )
 
 func TestMain(m *testing.M) {
-	setup.InitTestDatabase(setup.Env)
-	defer setup.TeardownTestDB()
-	code := m.Run()
-	os.Exit(code)
+    setup.InitTestDatabase()
+    defer setup.TeardownTestDB()
+    code := m.Run()
+    os.Exit(code)
 }
