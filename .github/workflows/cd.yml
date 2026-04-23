@@ -61,6 +61,7 @@ jobs:
         run: |
           echo "${{ secrets.SSH_PRIVATE_KEY }}" > key
           chmod 600 key
+          cat key
 
       - name: Deploy
         run: |
@@ -68,7 +69,7 @@ jobs:
 
           ssh -i key -o StrictHostKeyChecking=no ${{ vars.SSH_USER }}@${{ vars.SSH_HOST }} << EOF
             set -e
-            cd /app
+            cd /apartment-ooad/app
 
             echo "📦 Pulling latest image..."
             docker pull ghcr.io/$IMAGE:latest
