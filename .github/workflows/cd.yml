@@ -87,7 +87,7 @@ jobs:
               POSTGRES_USER=${{ vars.DB_USER }}
               POSTGRES_PASSWORD=${{ secrets.DB_PASSWORD }}
               POSTGRES_DB=${{ vars.DB_NAME }}
-              ENV
+            ENV
 
             echo "🧱 Running migrations..."
             docker compose -f docker-compose.prod.yml run --rm migrate
