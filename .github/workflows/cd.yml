@@ -105,7 +105,7 @@ jobs:
             echo "🔄 Restarting app..."
             echo "🧱 Running migrations..."
             docker compose -f docker-compose.prod.yml pull
-            docker compose -f docker-compose.prod.yml up -d --remove-orphans --rm migrate
+            docker compose -f docker-compose.prod.yml up -d --remove-orphans
 
             echo "🧹 Cleaning old images..."
             docker image prune -f
