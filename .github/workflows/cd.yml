@@ -69,7 +69,9 @@ jobs:
 
           ssh -i key -o StrictHostKeyChecking=no ${{ vars.SSH_USER }}@${{ vars.SSH_HOST }} << EOF
             set -e
-            cd /apartment-ooad/app
+            ls
+            cd /apartment-ooad
+            cd /app
 
             echo "📦 Pulling latest image..."
             docker pull ghcr.io/$IMAGE:latest
