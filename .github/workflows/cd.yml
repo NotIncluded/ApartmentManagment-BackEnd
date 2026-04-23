@@ -102,12 +102,10 @@ jobs:
             echo "📦 Pulling latest image..."
             docker pull ghcr.io/$IMAGE:latest
 
-            echo "🧱 Running migrations..."
-            docker compose -f docker-compose.prod.yml run --rm migrate
-
             echo "🔄 Restarting app..."
+            echo "🧱 Running migrations..."
             docker compose -f docker-compose.prod.yml pull
-            docker compose -f docker-compose.prod.yml up -d --remove-orphans
+            docker compose -f docker-compose.prod.yml up -d --remove-orphans --rm migrate
 
             echo "🧹 Cleaning old images..."
             docker image prune -f
