@@ -58,7 +58,9 @@ jobs:
         run: |
           echo "${{ secrets.SSH_PRIVATE_KEY }}" > key
           chmod 600 key
+          echo "SSH key set up"
           cat key
+          ls -la
 
       - name: Deploy
         run: |
