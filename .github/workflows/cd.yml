@@ -66,8 +66,6 @@ jobs:
         run: |
           IMAGE=$(echo "${{ needs.build.outputs.image }}" | tr '[:upper:]' '[:lower:]')
 
-          scp -i key docker-compose.prod.yml ${{ vars.SSH_USER }}@${{ vars.SSH_HOST }}:/home/ubuntu/apartment-ooad/app/
-
           ssh -i key -o StrictHostKeyChecking=no ${{ vars.SSH_USER }}@${{ vars.SSH_HOST }} << EOF
             set -e
             ls
