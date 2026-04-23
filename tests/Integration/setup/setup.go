@@ -14,7 +14,7 @@ import (
 )
 
 const (
-	TestDBName = "apartment_test"
+	TestDBName = "apartment"
 	JWTSecret  = "test_jwt_secret_key"
 )
 

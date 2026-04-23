@@ -19,19 +19,21 @@ services:
       retries: 10
 
   migrate:
-    build: .
-    env_file:
-      - .env
+    image: ${IMAGE_NAME}
+    pull_policy: always
     depends_on:
       db:
         condition: service_healthy
+    env_file:
+      - .env
     networks:
       - apartment_network
     restart: "no"
     command: ["./main", "--setup=true"]
 
   app:
-    build: .
+    image: ${IMAGE_NAME}
+    pull_policy: always
     restart: unless-stopped
     ports:
       - "8080:8080"

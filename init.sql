@@ -1,1 +1,0 @@
-CREATE DATABASE apartment_test;
