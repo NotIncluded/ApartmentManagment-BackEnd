@@ -82,6 +82,12 @@ jobs:
           scp -i key -o StrictHostKeyChecking=no .env \
           ${{ vars.SSH_USER }}@${{ vars.SSH_HOST }}:/home/ubuntu/apartment-ooad/app/.env
 
+      - name: Upload docker-compose.prod.yml
+        run: |
+          scp -i key -o StrictHostKeyChecking=no \
+            docker-compose.prod.yml \
+            ${{ vars.SSH_USER }}@${{ vars.SSH_HOST }}:/home/ubuntu/apartment-ooad/app/docker-compose.prod.yml
+
       - name: Deploy
         run: |
           IMAGE=$(echo "${{ needs.build.outputs.image }}" | tr '[:upper:]' '[:lower:]')
