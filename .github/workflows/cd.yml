@@ -77,16 +77,16 @@ jobs:
 
             echo "🧱 Creating .env file..."
             cat <<ENV > .env
-              PORT=8080
-              JWT_SECRET=${{ secrets.JWT_SECRET }}
-              DB_HOST=db
-              DB_USER=${{ vars.DB_USER }}
-              DB_PASSWORD=${{ secrets.DB_PASSWORD }}
-              DB_NAME=${{ vars.DB_NAME }}
-              DB_PORT=5432
-              POSTGRES_USER=${{ vars.DB_USER }}
-              POSTGRES_PASSWORD=${{ secrets.DB_PASSWORD }}
-              POSTGRES_DB=${{ vars.DB_NAME }}
+            PORT=8080
+            JWT_SECRET=${{ secrets.JWT_SECRET }}
+            DB_HOST=db
+            DB_USER=${{ vars.DB_USER }}
+            DB_PASSWORD=${{ secrets.DB_PASSWORD }}
+            DB_NAME=${{ vars.DB_NAME }}
+            DB_PORT=5432
+            POSTGRES_USER=${{ vars.DB_USER }}
+            POSTGRES_PASSWORD=${{ secrets.DB_PASSWORD }}
+            POSTGRES_DB=${{ vars.DB_NAME }}
             ENV
 
             echo "🧱 Running migrations..."
