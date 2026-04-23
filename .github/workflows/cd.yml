@@ -51,27 +51,8 @@ jobs:
     environment: prod        # 👈 add this
 
     steps:
-      - name: Debug variables
-        run: |
-          echo "SSH_USER: ${{ vars.SSH_USER }}"
-          echo "SSH_HOST: ${{ vars.SSH_HOST }}"
-          echo "DB_USER: ${{ vars.DB_USER }}"
-          echo "DB_NAME: ${{ vars.DB_NAME }}"
-
-      - name: Check out
+      - name: Checkout repository
         uses: actions/checkout@v4
-      
-      - name: Debug files
-        run: |
-          pwd
-          ls -lah
-          find . -name docker-compose.prod.yml
-
-      - name: Debug SSH key
-        run: |
-          echo "=== Raw secret (first 50 chars) ==="
-          printf "%s" "${{ secrets.SSH_PRIVATE_KEY }}" | head -c 50
-          echo ""
 
       - name: Setup SSH key
         run: |
