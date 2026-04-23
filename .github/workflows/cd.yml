@@ -2,26 +2,26 @@ name: CD - Build & Deploy
 
 on:
   push:
-    branches: ["main"]
+    branches: ["dev"]
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    environment: prod   # 🔥 important
+    environment: prod
 
     permissions:
       contents: read
       packages: write
 
     steps:
+      # 📥 Checkout code
       - name: Checkout
         uses: actions/checkout@v4
 
-      # 🔐 Login to :contentReference[oaicite:0]{index=0}
+      # 🔐 Login to GHCR
       - name: Login to GHCR
         uses: docker/login-action@v3
         with:
@@ -29,40 +29,48 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-     # ✅ convert repo name to lowercase
-      - name: Set lowercase image name
-        id: lowercase
+      # 🧠 Set lowercase image name
+      - name: Set image name
         run: |
-          echo "image_name=$(echo '${{ github.repository }}' | tr '[:upper:]' '[:lower:]')" >> $GITHUB_OUTPUT
+          echo "IMAGE=$(echo '${{ github.repository }}' | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
 
-      # ✅ use lowercase here
+      # 🐳 Build image
       - name: Build image
         run: |
-          docker build -t ${{ env.REGISTRY }}/${{ steps.lowercase.outputs.image_name }}:latest .
+          docker build -t ${{ env.REGISTRY }}/${{ env.IMAGE }}:latest .
 
-      # ✅ use lowercase here
+      # 📤 Push image
       - name: Push image
         run: |
-          docker push ${{ env.REGISTRY }}/${{ steps.lowercase.outputs.image_name }}:latest
+          docker push ${{ env.REGISTRY }}/${{ env.IMAGE }}:latest
 
-      # 🚀 Deploy to server
+      # 🔐 Setup SSH key (FIXED SAFE VERSION)
+      - name: Setup SSH key
+        run: |
+          printf "%s" "${{ secrets.SSH_PRIVATE_KEY_B64 }}" | base64 -d > key
+          chmod 600 key
+
+      # 🚀 Deploy
       - name: Deploy via SSH
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ vars.SSH_HOST }}
-          username: ${{ vars.SSH_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          script: |
+        run: |
+          ssh -i key -o StrictHostKeyChecking=no ${{ vars.SSH_USER }}@${{ vars.SSH_HOST }} << EOF
+
+            set -e
+
             cd /app
 
-            echo "Pulling latest image..."
-            docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+            echo "📦 Pulling latest image..."
+            docker pull ghcr.io/${{ env.IMAGE }}:latest
 
-            echo "Running migration..."
+            echo "🧱 Running migrations..."
             docker compose -f docker-compose.prod.yml run --rm migrate
 
-            echo "Restarting app..."
+            echo "🔄 Restarting app..."
             docker compose -f docker-compose.prod.yml up -d
 
-            echo "Cleanup old images..."
+            echo "🧹 Cleaning old images..."
             docker image prune -f
+
+            echo "✅ Deployment complete"
+
+          EOF
