@@ -35,13 +35,14 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build
-        run: |
-          docker build -t ${{ env.REGISTRY }}/${{ steps.image.outputs.name }}:latest .
-
-      - name: Push
-        run: |
-          docker push ${{ env.REGISTRY }}/${{ steps.image.outputs.name }}:latest
+      - name: Build and push
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ steps.image.outputs.name }}:latest
+            ${{ env.REGISTRY }}/${{ steps.image.outputs.name }}:${{ github.sha }}
 
 
   deploy:
@@ -56,25 +57,28 @@ jobs:
 
       - name: Deploy
         run: |
-          ssh -i key -o StrictHostKeyChecking=no ${{ vars.SSH_USER }}@${{ vars.SSH_HOST }} << EOF
+          IMAGE=$(echo "${{ needs.build.outputs.image }}" | tr '[:upper:]' '[:lower:]')
 
+          ssh -i key -o StrictHostKeyChecking=no ${{ vars.SSH_USER }}@${{ vars.SSH_HOST }} << EOF
             set -e
             cd /app
 
-            IMAGE=$(echo "${{ needs.build.outputs.image }}" | tr '[:upper:]' '[:lower:]')
-
-            echo "📦 Pulling image..."
+            echo "📦 Pulling latest image..."
             docker pull ghcr.io/$IMAGE:latest
 
             echo "🧱 Running migrations..."
             docker compose -f docker-compose.prod.yml run --rm migrate
 
             echo "🔄 Restarting app..."
-            docker compose -f docker-compose.prod.yml up -d
+            docker compose -f docker-compose.prod.yml pull
+            docker compose -f docker-compose.prod.yml up -d --remove-orphans
 
             echo "🧹 Cleaning old images..."
             docker image prune -f
 
             echo "✅ Done"
-
           EOF
+
+      - name: Cleanup SSH key
+        if: always()
+        run: rm -f key
