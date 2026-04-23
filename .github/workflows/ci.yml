@@ -1,0 +1,55 @@
+name: CI - Integration Tests
+
+on:
+  push:
+    branches: ["dev"]
+  pull_request:
+    branches: ["main", "dev"]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Create .env
+        run: |
+          cat <<EOF > .env
+          PORT=8080
+          JWT_SECRET=${{ secrets.JWT_SECRET }}
+          DB_HOST=db
+          DB_USER=${{ secrets.DB_USER }}
+          DB_PASSWORD=${{ secrets.DB_PASSWORD }}
+          DB_NAME=${{ secrets.DB_NAME }}
+          DB_PORT=5432
+          POSTGRES_USER=${{ secrets.DB_USER }}
+          POSTGRES_PASSWORD=${{ secrets.DB_PASSWORD }}
+          POSTGRES_DB=${{ secrets.DB_NAME }}
+          EOF
+
+      # ✅ Start ONLY database
+      - name: Start DB
+        run: docker compose up -d db
+
+      # ✅ Wait for DB properly (no sleep)
+      - name: Wait for DB
+        run: |
+          until docker exec $(docker ps -qf "name=db") pg_isready -U ${{ secrets.DB_USER }}; do
+            echo "Waiting for postgres..."
+            sleep 2
+          done
+
+      # ✅ Run migration explicitly
+      - name: Run migration
+        run: docker compose run --rm migrate
+
+      # ✅ Run integration tests
+      - name: Run tests
+        run: docker compose run --rm app go test ./tests/Integration/service -v
+
+      # ✅ Cleanup
+      - name: Cleanup
+        if: always()
+        run: docker compose down -v
