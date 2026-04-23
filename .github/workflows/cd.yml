@@ -74,6 +74,8 @@ jobs:
 
             echo "📦 Pulling latest image..."
             docker pull ghcr.io/$IMAGE:latest
+            
+            echo this is image bro !!!! $IMAGE_NAME
 
             echo "🧱 Running migrations..."
             docker compose -f docker-compose.prod.yml run --rm migrate
