@@ -67,6 +67,7 @@ jobs:
           POSTGRES_USER=${{ secrets.DB_USER }}
           POSTGRES_PASSWORD=${{ secrets.DB_PASSWORD }}
           POSTGRES_DB=${{ secrets.DB_NAME }}
+          IMAGE_NAME=${{ needs.build.outputs.image }}
           EOF
 
       - name: Setup SSH key
