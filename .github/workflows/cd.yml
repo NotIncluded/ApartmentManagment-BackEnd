@@ -53,6 +53,21 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+      
+      - name: Create .env
+        run: |
+          cat <<EOF > .env
+          PORT=8080
+          JWT_SECRET=${{ secrets.JWT_SECRET }}
+          DB_HOST=db
+          DB_USER=${{ secrets.DB_USER }}
+          DB_PASSWORD=${{ secrets.DB_PASSWORD }}
+          DB_NAME=${{ secrets.DB_NAME }}
+          DB_PORT=5432
+          POSTGRES_USER=${{ secrets.DB_USER }}
+          POSTGRES_PASSWORD=${{ secrets.DB_PASSWORD }}
+          POSTGRES_DB=${{ secrets.DB_NAME }}
+          EOF
 
       - name: Setup SSH key
         run: |
@@ -61,17 +76,17 @@ jobs:
           echo "SSH key set up"
           cat key
           ls -la
+      
+      - name: Upload .env to server
+        run: |
+          scp -i key -o StrictHostKeyChecking=no .env \
+          ${{ vars.SSH_USER }}@${{ vars.SSH_HOST }}:/home/ubuntu/apartment-ooad/app/.env
 
       - name: Deploy
         run: |
           IMAGE=$(echo "${{ needs.build.outputs.image }}" | tr '[:upper:]' '[:lower:]')
 
-          ssh -i key -o StrictHostKeyChecking=no \
-              -e "JWT_SECRET=${{ secrets.JWT_SECRET }}" \
-              -e "DB_USER=${{ vars.DB_USER }}" \
-              -e "DB_PASSWORD=${{ secrets.DB_PASSWORD }}" \
-              -e "DB_NAME=${{ vars.DB_NAME }}" \
-              ${{ vars.SSH_USER }}@${{ vars.SSH_HOST }} << 'EOF'
+          ssh -i key -o StrictHostKeyChecking=no ${{ vars.SSH_USER }}@${{ vars.SSH_HOST }} << EOF
             set -e
             ls
             cd apartment-ooad/app/
@@ -79,20 +94,6 @@ jobs:
             echo "this is image bro !!!! $IMAGE"
             echo "📦 Pulling latest image..."
             docker pull ghcr.io/$IMAGE:latest
-
-            echo "🧱 Creating .env file..."
-            cat <<EOF > .env
-            PORT=8080
-            JWT_SECRET=$JWT_SECRET
-            DB_HOST=db
-            DB_USER=$DB_USER
-            DB_PASSWORD=$DB_PASSWORD
-            DB_NAME=$DB_NAME
-            DB_PORT=5432
-            POSTGRES_USER=$DB_USER
-            POSTGRES_PASSWORD=$DB_PASSWORD
-            POSTGRES_DB=$DB_NAME
-            EOF
 
             echo "🧱 Running migrations..."
             docker compose -f docker-compose.prod.yml run --rm migrate
