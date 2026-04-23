@@ -6,22 +6,31 @@ on:
 
 env:
   REGISTRY: ghcr.io
+  IMAGE: ${{ github.repository }}
 
 jobs:
-  deploy:
+
+  # 🐳 1. BUILD & PUSH
+  build:
     runs-on: ubuntu-latest
-    environment: prod
 
     permissions:
       contents: read
       packages: write
 
+    outputs:
+      image: ${{ steps.image.outputs.name }}
+
     steps:
-      # 📥 Checkout code
       - name: Checkout
         uses: actions/checkout@v4
 
-      # 🔐 Login to GHCR
+      - name: Set image name
+        id: image
+        run: |
+          IMAGE_NAME=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
+          echo "name=$IMAGE_NAME" >> $GITHUB_OUTPUT
+
       - name: Login to GHCR
         uses: docker/login-action@v3
         with:
@@ -29,28 +38,47 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      # 🧠 Set lowercase image name
-      - name: Set image name
-        run: |
-          echo "IMAGE=$(echo '${{ github.repository }}' | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
-
-      # 🐳 Build image
       - name: Build image
         run: |
-          docker build -t ${{ env.REGISTRY }}/${{ env.IMAGE }}:latest .
+          docker build -t ${{ env.REGISTRY }}/${{ steps.image.outputs.name }}:latest .
 
-      # 📤 Push image
       - name: Push image
         run: |
-          docker push ${{ env.REGISTRY }}/${{ env.IMAGE }}:latest
+          docker push ${{ env.REGISTRY }}/${{ steps.image.outputs.name }}:latest
 
-      # 🔐 Setup SSH key (FIXED SAFE VERSION)
+
+  # 🔐 2. PREPARE SSH
+  ssh:
+    runs-on: ubuntu-latest
+    needs: build
+
+    outputs:
+      image: ${{ needs.build.outputs.image }}
+
+    steps:
       - name: Setup SSH key
         run: |
           printf "%s" "${{ secrets.SSH_PRIVATE_KEY_B64 }}" | base64 -d > key
           chmod 600 key
 
-      # 🚀 Deploy
+      - name: Save key artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ssh-key
+          path: key
+
+
+  # 🚀 3. DEPLOY
+  deploy:
+    runs-on: ubuntu-latest
+    needs: [build, ssh]
+
+    steps:
+      - name: Download SSH key
+        uses: actions/download-artifact@v4
+        with:
+          name: ssh-key
+
       - name: Deploy via SSH
         run: |
           ssh -i key -o StrictHostKeyChecking=no ${{ vars.SSH_USER }}@${{ vars.SSH_HOST }} << EOF
@@ -59,8 +87,8 @@ jobs:
 
             cd /app
 
-            echo "📦 Pulling latest image..."
-            docker pull ghcr.io/${{ env.IMAGE }}:latest
+            echo "📦 Pulling image..."
+            docker pull ghcr.io/${{ needs.build.outputs.image }}:latest
 
             echo "🧱 Running migrations..."
             docker compose -f docker-compose.prod.yml run --rm migrate
@@ -71,6 +99,6 @@ jobs:
             echo "🧹 Cleaning old images..."
             docker image prune -f
 
-            echo "✅ Deployment complete"
+            echo "✅ Done"
 
           EOF
