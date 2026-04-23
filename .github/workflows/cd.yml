@@ -29,20 +29,21 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+     # ✅ convert repo name to lowercase
       - name: Set lowercase image name
         id: lowercase
         run: |
           echo "image_name=$(echo '${{ github.repository }}' | tr '[:upper:]' '[:lower:]')" >> $GITHUB_OUTPUT
 
-      # 🏗️ Build Docker image
+      # ✅ use lowercase here
       - name: Build image
         run: |
-          docker build -t ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest .
+          docker build -t ${{ env.REGISTRY }}/${{ steps.lowercase.outputs.image_name }}:latest .
 
-      # 📤 Push image
+      # ✅ use lowercase here
       - name: Push image
         run: |
-          docker push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+          docker push ${{ env.REGISTRY }}/${{ steps.lowercase.outputs.image_name }}:latest
 
       # 🚀 Deploy to server
       - name: Deploy via SSH
