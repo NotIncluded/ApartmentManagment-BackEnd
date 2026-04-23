@@ -63,6 +63,11 @@ jobs:
           chmod 600 key
           cat key
 
+      - name: Debug files
+        run: |
+          pwd
+          ls -lah
+          find . -name docker-compose.prod.yml
 
       - name: Deploy
         run: |
