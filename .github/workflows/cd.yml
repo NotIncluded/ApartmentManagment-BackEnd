@@ -2,7 +2,7 @@ name: CD - Build & Deploy
 
 on:
   push:
-    branches: ["dev"]
+    branches: ["main"]
 
 env:
   REGISTRY: ghcr.io
@@ -10,7 +10,7 @@ env:
 jobs:
   build:
     runs-on: ubuntu-latest
-    environment: prod        # 👈 add this
+    environment: prod
 
     permissions:
       contents: read
@@ -48,8 +48,7 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     needs: build
-    environment: prod        # 👈 add this
-
+    environment: prod
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -109,6 +108,9 @@ jobs:
 
             echo "🧹 Cleaning old images..."
             docker image prune -f
+
+            echo "🧹 Cleaning unused Docker resources..."
+            docker system prune -f
 
             echo "✅ Done"
           EOF
