@@ -67,6 +67,8 @@ jobs:
           POSTGRES_PASSWORD=${{ secrets.DB_PASSWORD }}
           POSTGRES_DB=${{ secrets.DB_NAME }}
           IMAGE_NAME=ghcr.io/${{ needs.build.outputs.image }}:latest
+          SUPABASE_URL=${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY=${{ secrets.SUPABASE_SERVICE_KEY }}
           EOF
 
       - name: Setup SSH key
