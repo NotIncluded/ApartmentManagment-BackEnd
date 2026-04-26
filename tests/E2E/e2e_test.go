@@ -1,12 +1,13 @@
 package e2e
 
 import (
+	"os"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
 
- 	"github.com/PunMung-66/ApartmentSys/internal/minio"
+ 	"github.com/PunMung-66/ApartmentSys/internal/storage"
 	"github.com/PunMung-66/ApartmentSys/controller"
 	"github.com/PunMung-66/ApartmentSys/internal/auth"
 	"github.com/PunMung-66/ApartmentSys/repository"
@@ -37,14 +38,10 @@ func SetupTestRouter() *gin.Engine {
 	contractService := service.NewContractService(contractRepo, roomRepo)
 	contractService.SetUserRepository(userRepo)
 
-	myMinioClient, _ := minio.NewMinioClient(
-			"localhost:9000", // Dummy endpoint
-			"minioadmin",     // Dummy access key
-			"minioadmin",     // Dummy secret
-			"test-bucket",    // Dummy bucket
-			false,
-		)
-    billSlipService := service.NewBillSlipService(billSlipRepo, myMinioClient)
+	supabaseURL := os.Getenv("SUPABASE_URL")
+	supabaseKey := os.Getenv("SUPABASE_SERVICE_KEY")
+	storageClient := storage.NewSupabaseStorage(supabaseURL, supabaseKey)
+	billSlipService := service.NewBillSlipService(billSlipRepo, storageClient)
 	
 	userController := controller.NewUserController(userService)
 	roomController := controller.NewRoomController(roomService)
