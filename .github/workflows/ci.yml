@@ -3,7 +3,7 @@ name: CI - Integration Tests
 on:
   push:
     branches: ["dev"]
-  pull_request:
+  pull_request_target:
     branches: ["dev"]
 
 concurrency:
