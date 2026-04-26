@@ -1,11 +1,10 @@
-
 package controller
 
 import (
 	"net/http"
-	"os"
-	"github.com/gin-gonic/gin"
+
 	"github.com/PunMung-66/ApartmentSys/service"
+	"github.com/gin-gonic/gin"
 )
 
 type BillSlipController struct {
@@ -19,22 +18,32 @@ func NewBillSlipController(service *service.BillSlipService) *BillSlipController
 func (ctrl *BillSlipController) UploadBillSlip(c *gin.Context) {
 	billID := c.PostForm("bill_id")
 	roomID := c.PostForm("room_id")
-	file, err := c.FormFile("slip")
+
+	// 1. Get the file header from the form
+	fileHeader, err := c.FormFile("slip")
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "No file is received"})
 		return
 	}
-	filePath := "/tmp/" + file.Filename
-	if err := c.SaveUploadedFile(file, filePath); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save file"})
+
+	// 2. Open the file into memory instead of saving to disk
+	file, err := fileHeader.Open()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to open file stream"})
 		return
 	}
-	defer func() { _ = os.Remove(filePath) }()
-	contentType := file.Header.Get("Content-Type")
-	slipURL, err := ctrl.service.UploadSlip(c.Request.Context(), billID, roomID, filePath, contentType)
+	defer file.Close() // Ensure the file stream is closed when done
+
+	contentType := fileHeader.Header.Get("Content-Type")
+
+	// 3. Pass the opened file (io.Reader) and the Filename to the service layer.
+	// Note: We changed the parameters here to pass `file` and `fileHeader.Filename` 
+	// instead of `filePath`. We will update the Service to match this next.
+	slipURL, err := ctrl.service.UploadSlip(c.Request.Context(), billID, roomID, file, fileHeader.Filename, contentType)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
+
 	c.JSON(http.StatusOK, gin.H{"slip_url": slipURL})
 }
