@@ -10,11 +10,10 @@ import (
 	"github.com/PunMung-66/ApartmentSys/config"
 	"github.com/PunMung-66/ApartmentSys/controller"
 	"github.com/PunMung-66/ApartmentSys/internal/auth"
+	"github.com/PunMung-66/ApartmentSys/internal/storage"
 	"github.com/PunMung-66/ApartmentSys/model"
 	"github.com/PunMung-66/ApartmentSys/repository"
 	"github.com/PunMung-66/ApartmentSys/service"
-
-	"github.com/PunMung-66/ApartmentSys/internal/storage"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -37,12 +36,13 @@ func main() {
 
 	r := gin.Default()
 
-	// ✅ CORS (from dev branch)
 	r.Use(cors.New(cors.Config{
 		AllowOrigins: []string{
 			"http://localhost:5173",
 			"http://127.0.0.1:5173",
 			"https://apartment-managment-front-end.vercel.app",
+			"http://localhost:3000",
+			"http://127.0.0.1:3000",
 		},
 		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"},
 		AllowHeaders:     []string{"Content-Type", "Authorization"},
@@ -63,7 +63,6 @@ func main() {
 		panic("failed to connect database: " + err.Error())
 	}
 
-	// ✅ Setup mode
 	if *setup {
 		fmt.Println("Running initial setup (AutoMigrate)...")
 
@@ -75,7 +74,7 @@ func main() {
 			&model.UtilityUsage{},
 			&model.Bill{},
 			&model.Payment{},
-			&model.BillSlip{}, // from main branch
+			&model.BillSlip{},
 		)
 
 		fmt.Println("Setup completed!")
@@ -136,14 +135,38 @@ func main() {
 		contractRoute.GET("/room/:roomID", auth.Protect([]byte(secret), "STAFF"), contractController.GetContractsByRoomID)
 	}
 
-	// // ================= BILL SLIP (from main) =================
+	// ================= UTILITY RATE =================
+	utilityRateRepo := repository.NewUtilityRateRepository(db)
+	utilityRepo := repository.NewUtilityUsageRepository(db)
+	utilityService := service.NewUtilityService(utilityRateRepo, utilityRepo, contractRepo)
+	utilityController := controller.NewUtilityController(utilityService)
+
+	utilityRateRoute := r.Group("/utility-rates")
+	{
+		utilityRateRoute.POST("", auth.Protect([]byte(secret), "STAFF"), utilityController.CreateRate)
+		utilityRateRoute.GET("", auth.Protect([]byte(secret), "STAFF", "TENANT"), utilityController.GetAllRates)
+		utilityRateRoute.GET("/:id", auth.Protect([]byte(secret), "STAFF", "TENANT"), utilityController.GetRateByID)
+		utilityRateRoute.PUT("/:id", auth.Protect([]byte(secret), "STAFF"), utilityController.UpdateRate)
+		utilityRateRoute.DELETE("/:id", auth.Protect([]byte(secret), "STAFF"), utilityController.DeleteRate)
+	}
+
+	utilityUsageRoute := r.Group("/utility-usages")
+	{
+		utilityUsageRoute.POST("", auth.Protect([]byte(secret), "STAFF"), utilityController.RecordUsage)
+		utilityUsageRoute.GET("/contract/:contractID", auth.Protect([]byte(secret), "STAFF"), utilityController.GetUsagesByContract)
+		utilityUsageRoute.PUT("/:id", auth.Protect([]byte(secret), "STAFF"), utilityController.UpdateUsage)
+		utilityUsageRoute.DELETE("/:id", auth.Protect([]byte(secret), "STAFF"), utilityController.DeleteUsage)
+		utilityUsageRoute.GET("/:id", auth.Protect([]byte(secret), "STAFF"), utilityController.GetUsageByID)
+	}
+
+	// ================= BILL SLIP (Supabase) =================
 	supabaseURL := os.Getenv("SUPABASE_URL")
 	supabaseKey := os.Getenv("SUPABASE_SERVICE_KEY")
 	if supabaseKey == "" {
-			fmt.Println("🛑 ERROR: Supabase Key is completely empty! Check .env.dev")
-		} else {
-			fmt.Println("✅ Supabase Key loaded successfully!")
-		}
+		fmt.Println("ERROR: Supabase Key is completely empty! Check .env.dev")
+	} else {
+		fmt.Println("Supabase Key loaded successfully!")
+	}
 	storageClient := storage.NewSupabaseStorage(supabaseURL, supabaseKey)
 
 	billSlipRepo := repository.NewBillSlipRepository(db)
@@ -159,6 +182,8 @@ func main() {
 	meRoute := r.Group("/me")
 	{
 		meRoute.GET("/room", auth.Protect([]byte(secret), "TENANT"), roomController.GetMyRoom)
+		meRoute.GET("/usages", auth.Protect([]byte(secret), "TENANT"), utilityController.GetMyUsages)
+		meRoute.GET("/usages/latest", auth.Protect([]byte(secret), "TENANT"), utilityController.GetMyLatestUsage)
 	}
 
 	// ================= AUTH =================

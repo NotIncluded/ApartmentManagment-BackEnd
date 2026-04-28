@@ -9,7 +9,7 @@ import (
 
 type UtilityUsage struct {
 	ID              string         `gorm:"type:char(36);primaryKey" json:"usage_id"`
-	ContractID      string         `json:"contract_id" gorm:"not null"`
+	ContractID      string         `json:"contract_id" gorm:"not null;index"`
 	OldWaterUnit    int            `json:"old_water_unit" gorm:"not null"`
 	NewWaterUnit    int            `json:"new_water_unit" gorm:"not null"`
 	OldElectricUnit int            `json:"old_electric_unit" gorm:"not null"`
@@ -18,8 +18,7 @@ type UtilityUsage struct {
 	CreatedAt       time.Time      `json:"created_at"`
 	UpdatedAt       time.Time      `json:"updated_at"`
 	DeletedAt       gorm.DeletedAt `gorm:"index" json:"deleted_at"`
-	// Relation
-	Contract *Contract `gorm:"foreignKey:ContractID" json:"-"`
+	Contract        *Contract      `gorm:"foreignKey:ContractID;references:ID" json:"-"`
 }
 
 func (UtilityUsage) TableName() string {
