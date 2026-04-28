@@ -35,6 +35,7 @@ var (
 	RoomService  *service.RoomService
 	Env          string
 )
+
 func init() {
 	if TestDB == nil {
 		InitTestDatabase()
@@ -44,11 +45,11 @@ func init() {
 func getEnvFilePath(environment string) string {
 	switch environment {
 	case "local":
-		return "../../../.env.local"
+		return "../../.env.local"
 	case "dev":
-		return "../../../.env.dev"
+		return "../../.env.dev"
 	default:
-		return "../../../.env"
+		return "../../.env"
 	}
 }
 
@@ -67,6 +68,8 @@ func InitTestDatabase() {
 	db.AutoMigrate(&model.User{})
 	db.AutoMigrate(&model.Room{})
 	db.AutoMigrate(&model.Contract{})
+	db.AutoMigrate(&model.UtilityRate{})
+	db.AutoMigrate(&model.UtilityUsage{})
 
 	TestDB = db
 	UserRepo = repository.NewUserRepository(TestDB)
@@ -80,6 +83,8 @@ func InitTestDatabase() {
 // ResetTestDB clears all test data
 func ResetTestDB() {
 	if TestDB != nil {
+		TestDB.Exec("TRUNCATE TABLE utility_usages CASCADE")
+		TestDB.Exec("TRUNCATE TABLE utility_rates CASCADE")
 		TestDB.Exec("TRUNCATE TABLE contracts CASCADE")
 		TestDB.Exec("TRUNCATE TABLE rooms CASCADE")
 		TestDB.Exec("TRUNCATE TABLE users CASCADE")
@@ -89,6 +94,8 @@ func ResetTestDB() {
 // TeardownTestDB closes the database connection
 func TeardownTestDB() {
 	if TestDB != nil {
+		TestDB.Exec("TRUNCATE TABLE utility_usages CASCADE")
+		TestDB.Exec("TRUNCATE TABLE utility_rates CASCADE")
 		TestDB.Exec("TRUNCATE TABLE contracts CASCADE")
 		TestDB.Exec("TRUNCATE TABLE rooms CASCADE")
 		TestDB.Exec("TRUNCATE TABLE users CASCADE")
