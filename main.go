@@ -10,10 +10,11 @@ import (
 	"github.com/PunMung-66/ApartmentSys/config"
 	"github.com/PunMung-66/ApartmentSys/controller"
 	"github.com/PunMung-66/ApartmentSys/internal/auth"
-	// internalminio "github.com/PunMung-66/ApartmentSys/internal/minio"
 	"github.com/PunMung-66/ApartmentSys/model"
 	"github.com/PunMung-66/ApartmentSys/repository"
 	"github.com/PunMung-66/ApartmentSys/service"
+
+	"github.com/PunMung-66/ApartmentSys/internal/storage"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -41,8 +42,7 @@ func main() {
 		AllowOrigins: []string{
 			"http://localhost:5173",
 			"http://127.0.0.1:5173",
-			"http://localhost:3000",
-			"http://127.0.0.1:3000",
+			"https://apartment-managment-front-end.vercel.app",
 		},
 		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"},
 		AllowHeaders:     []string{"Content-Type", "Authorization"},
@@ -137,25 +137,19 @@ func main() {
 	}
 
 	// // ================= BILL SLIP (from main) =================
-	// minioClient, err := internalminio.NewMinioClient(
-	// 	os.Getenv("MINIO_ENDPOINT"),
-	// 	os.Getenv("MINIO_ACCESS_KEY"),
-	// 	os.Getenv("MINIO_SECRET_KEY"),
-	// 	os.Getenv("MINIO_BUCKET"),
-	// 	os.Getenv("MINIO_USE_SSL") == "true",
-	// )
-	// if err != nil {
-	// 	panic("failed to initialize MinIO client: " + err.Error())
-	// }
+	supabaseURL := os.Getenv("SUPABASE_URL")
+	supabaseKey := os.Getenv("SUPABASE_SERVICE_KEY")
 
-	// billSlipRepo := repository.NewBillSlipRepository(db)
-	// billSlipService := service.NewBillSlipService(billSlipRepo, minioClient)
-	// billSlipController := controller.NewBillSlipController(billSlipService)
+	storageClient := storage.NewSupabaseStorage(supabaseURL, supabaseKey)
 
-	// billSlipRoute := r.Group("/billslips")
-	// {
-	// 	billSlipRoute.POST("/upload", billSlipController.UploadBillSlip)
-	// }
+	billSlipRepo := repository.NewBillSlipRepository(db)
+	billSlipService := service.NewBillSlipService(billSlipRepo, storageClient)
+	billSlipController := controller.NewBillSlipController(billSlipService)
+
+	billSlipRoute := r.Group("/billslips")
+	{
+		billSlipRoute.POST("/upload", billSlipController.UploadBillSlip)
+	}
 
 	// ================= ME =================
 	meRoute := r.Group("/me")
