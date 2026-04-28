@@ -10,8 +10,7 @@ import (
 	"github.com/PunMung-66/ApartmentSys/config"
 	"github.com/PunMung-66/ApartmentSys/controller"
 	"github.com/PunMung-66/ApartmentSys/internal/auth"
-
-	// internalminio "github.com/PunMung-66/ApartmentSys/internal/minio"
+	"github.com/PunMung-66/ApartmentSys/internal/storage"
 	"github.com/PunMung-66/ApartmentSys/model"
 	"github.com/PunMung-66/ApartmentSys/repository"
 	"github.com/PunMung-66/ApartmentSys/service"
@@ -37,11 +36,11 @@ func main() {
 
 	r := gin.Default()
 
-	// ✅ CORS (from dev branch)
 	r.Use(cors.New(cors.Config{
 		AllowOrigins: []string{
 			"http://localhost:5173",
 			"http://127.0.0.1:5173",
+			"https://apartment-managment-front-end.vercel.app",
 			"http://localhost:3000",
 			"http://127.0.0.1:3000",
 		},
@@ -64,7 +63,6 @@ func main() {
 		panic("failed to connect database: " + err.Error())
 	}
 
-	// ✅ Setup mode
 	if *setup {
 		fmt.Println("Running initial setup (AutoMigrate)...")
 
@@ -76,7 +74,7 @@ func main() {
 			&model.UtilityUsage{},
 			&model.Bill{},
 			&model.Payment{},
-			&model.BillSlip{}, // from main branch
+			&model.BillSlip{},
 		)
 
 		fmt.Println("Setup completed!")
@@ -161,26 +159,24 @@ func main() {
 		utilityUsageRoute.GET("/:id", auth.Protect([]byte(secret), "STAFF"), utilityController.GetUsageByID)
 	}
 
-	// // ================= BILL SLIP (from main) =================
-	// minioClient, err := internalminio.NewMinioClient(
-	// 	os.Getenv("MINIO_ENDPOINT"),
-	// 	os.Getenv("MINIO_ACCESS_KEY"),
-	// 	os.Getenv("MINIO_SECRET_KEY"),
-	// 	os.Getenv("MINIO_BUCKET"),
-	// 	os.Getenv("MINIO_USE_SSL") == "true",
-	// )
-	// if err != nil {
-	// 	panic("failed to initialize MinIO client: " + err.Error())
-	// }
+	// ================= BILL SLIP (Supabase) =================
+	supabaseURL := os.Getenv("SUPABASE_URL")
+	supabaseKey := os.Getenv("SUPABASE_SERVICE_KEY")
+	if supabaseKey == "" {
+		fmt.Println("ERROR: Supabase Key is completely empty! Check .env.dev")
+	} else {
+		fmt.Println("Supabase Key loaded successfully!")
+	}
+	storageClient := storage.NewSupabaseStorage(supabaseURL, supabaseKey)
 
-	// billSlipRepo := repository.NewBillSlipRepository(db)
-	// billSlipService := service.NewBillSlipService(billSlipRepo, minioClient)
-	// billSlipController := controller.NewBillSlipController(billSlipService)
+	billSlipRepo := repository.NewBillSlipRepository(db)
+	billSlipService := service.NewBillSlipService(billSlipRepo, storageClient)
+	billSlipController := controller.NewBillSlipController(billSlipService)
 
-	// billSlipRoute := r.Group("/billslips")
-	// {
-	// 	billSlipRoute.POST("/upload", billSlipController.UploadBillSlip)
-	// }
+	billSlipRoute := r.Group("/billslips")
+	{
+		billSlipRoute.POST("/upload", billSlipController.UploadBillSlip)
+	}
 
 	// ================= ME =================
 	meRoute := r.Group("/me")
