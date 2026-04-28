@@ -2,6 +2,9 @@ package setup
 
 import (
 	"errors"
+	"fmt"
+	"os"
+	"path/filepath"
 	"time"
 
 	"github.com/PunMung-66/ApartmentSys/config"
@@ -35,6 +38,7 @@ var (
 	RoomService  *service.RoomService
 	Env          string
 )
+
 func init() {
 	if TestDB == nil {
 		InitTestDatabase()
@@ -44,19 +48,42 @@ func init() {
 func getEnvFilePath(environment string) string {
 	switch environment {
 	case "local":
-		return "../../../.env.local"
+		return ".env.local"
 	case "dev":
-		return "../../../.env.dev"
+		return ".env.dev"
 	default:
-		return "../../../.env"
+		return ".env"
 	}
+}
+
+func findEnvFile() string {
+	// Try multiple paths to find .env file
+	paths := []string{
+		".env",
+		"../.env",
+		"../../.env",
+		"../../../.env",
+	}
+
+	for _, path := range paths {
+		if _, err := os.Stat(path); err == nil {
+			absPath, _ := filepath.Abs(path)
+			fmt.Printf("Found .env file at: %s\n", absPath)
+			return path
+		}
+	}
+
+	// If no .env file found, return default path
+	return ".env"
 }
 
 // InitTestDatabase initializes the test database connection
 func InitTestDatabase() {
-	envFile := getEnvFilePath("") // Default to local env for tests
+	envFile := findEnvFile()
 	if err := godotenv.Load(envFile); err != nil {
-		panic("Failed to load env file: " + envFile + " : " + err.Error())
+		// Don't panic - just log warning and continue
+		// This allows tests to run with environment variables set elsewhere
+		fmt.Printf("Warning: Could not load env file from %s - using environment variables if available\n", envFile)
 	}
 
 	db, err := config.ConnectTestDatabase(TestDBName)
