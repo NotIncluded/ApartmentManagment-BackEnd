@@ -21,7 +21,6 @@ jobs:
       - name: Create .env
         run: |
           ls -la
-          cd PunMung-66/ApartmentManagment-BackEnd
           cat <<EOF > .env
           PORT=8080
           JWT_SECRET=${{ secrets.JWT_SECRET }}
