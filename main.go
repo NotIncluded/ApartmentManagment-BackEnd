@@ -10,11 +10,11 @@ import (
 	"github.com/PunMung-66/ApartmentSys/config"
 	"github.com/PunMung-66/ApartmentSys/controller"
 	"github.com/PunMung-66/ApartmentSys/internal/auth"
+
+	// internalminio "github.com/PunMung-66/ApartmentSys/internal/minio"
 	"github.com/PunMung-66/ApartmentSys/model"
 	"github.com/PunMung-66/ApartmentSys/repository"
 	"github.com/PunMung-66/ApartmentSys/service"
-
-	"github.com/PunMung-66/ApartmentSys/internal/storage"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -42,7 +42,8 @@ func main() {
 		AllowOrigins: []string{
 			"http://localhost:5173",
 			"http://127.0.0.1:5173",
-			"https://apartment-managment-front-end.vercel.app",
+			"http://localhost:3000",
+			"http://127.0.0.1:3000",
 		},
 		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"},
 		AllowHeaders:     []string{"Content-Type", "Authorization"},
@@ -136,25 +137,57 @@ func main() {
 		contractRoute.GET("/room/:roomID", auth.Protect([]byte(secret), "STAFF"), contractController.GetContractsByRoomID)
 	}
 
-	// // ================= BILL SLIP (from main) =================
-	supabaseURL := os.Getenv("SUPABASE_URL")
-	supabaseKey := os.Getenv("SUPABASE_SERVICE_KEY")
+	// ================= UTILITY RATE =================
+	utilityRateRepo := repository.NewUtilityRateRepository(db)
+	utilityRepo := repository.NewUtilityUsageRepository(db)
+	utilityService := service.NewUtilityService(utilityRateRepo, utilityRepo, contractRepo)
+	utilityController := controller.NewUtilityController(utilityService)
 
-	storageClient := storage.NewSupabaseStorage(supabaseURL, supabaseKey)
-
-	billSlipRepo := repository.NewBillSlipRepository(db)
-	billSlipService := service.NewBillSlipService(billSlipRepo, storageClient)
-	billSlipController := controller.NewBillSlipController(billSlipService)
-
-	billSlipRoute := r.Group("/billslips")
+	utilityRateRoute := r.Group("/utility-rates")
 	{
-		billSlipRoute.POST("/upload", billSlipController.UploadBillSlip)
+		utilityRateRoute.POST("", auth.Protect([]byte(secret), "STAFF"), utilityController.CreateRate)
+		utilityRateRoute.GET("", auth.Protect([]byte(secret), "STAFF", "TENANT"), utilityController.GetAllRates)
+		utilityRateRoute.GET("/:id", auth.Protect([]byte(secret), "STAFF", "TENANT"), utilityController.GetRateByID)
+		utilityRateRoute.PUT("/:id", auth.Protect([]byte(secret), "STAFF"), utilityController.UpdateRate)
+		utilityRateRoute.DELETE("/:id", auth.Protect([]byte(secret), "STAFF"), utilityController.DeleteRate)
 	}
+
+	utilityUsageRoute := r.Group("/utility-usages")
+	{
+		utilityUsageRoute.POST("", auth.Protect([]byte(secret), "STAFF"), utilityController.RecordUsage)
+		utilityUsageRoute.GET("/contract/:contractID", auth.Protect([]byte(secret), "STAFF"), utilityController.GetUsagesByContract)
+		utilityUsageRoute.PUT("/:id", auth.Protect([]byte(secret), "STAFF"), utilityController.UpdateUsage)
+		utilityUsageRoute.DELETE("/:id", auth.Protect([]byte(secret), "STAFF"), utilityController.DeleteUsage)
+		utilityUsageRoute.GET("/:id", auth.Protect([]byte(secret), "STAFF"), utilityController.GetUsageByID)
+	}
+
+	// // ================= BILL SLIP (from main) =================
+	// minioClient, err := internalminio.NewMinioClient(
+	// 	os.Getenv("MINIO_ENDPOINT"),
+	// 	os.Getenv("MINIO_ACCESS_KEY"),
+	// 	os.Getenv("MINIO_SECRET_KEY"),
+	// 	os.Getenv("MINIO_BUCKET"),
+	// 	os.Getenv("MINIO_USE_SSL") == "true",
+	// )
+	// if err != nil {
+	// 	panic("failed to initialize MinIO client: " + err.Error())
+	// }
+
+	// billSlipRepo := repository.NewBillSlipRepository(db)
+	// billSlipService := service.NewBillSlipService(billSlipRepo, minioClient)
+	// billSlipController := controller.NewBillSlipController(billSlipService)
+
+	// billSlipRoute := r.Group("/billslips")
+	// {
+	// 	billSlipRoute.POST("/upload", billSlipController.UploadBillSlip)
+	// }
 
 	// ================= ME =================
 	meRoute := r.Group("/me")
 	{
 		meRoute.GET("/room", auth.Protect([]byte(secret), "TENANT"), roomController.GetMyRoom)
+		meRoute.GET("/usages", auth.Protect([]byte(secret), "TENANT"), utilityController.GetMyUsages)
+		meRoute.GET("/usages/latest", auth.Protect([]byte(secret), "TENANT"), utilityController.GetMyLatestUsage)
 	}
 
 	// ================= AUTH =================
