@@ -139,7 +139,11 @@ func main() {
 	// // ================= BILL SLIP (from main) =================
 	supabaseURL := os.Getenv("SUPABASE_URL")
 	supabaseKey := os.Getenv("SUPABASE_SERVICE_KEY")
-
+	if supabaseKey == "" {
+			fmt.Println("🛑 ERROR: Supabase Key is completely empty! Check .env.dev")
+		} else {
+			fmt.Println("✅ Supabase Key loaded successfully!")
+		}
 	storageClient := storage.NewSupabaseStorage(supabaseURL, supabaseKey)
 
 	billSlipRepo := repository.NewBillSlipRepository(db)
