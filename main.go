@@ -159,6 +159,23 @@ func main() {
 		utilityUsageRoute.GET("/:id", auth.Protect([]byte(secret), "STAFF"), utilityController.GetUsageByID)
 	}
 
+// ================= BILL =================
+	// 1. Initialize the Bill Repository
+	billRepo := repository.NewBillRepository(db)
+
+	// 2. Initialize the Billing Service (Injecting the 4 required repositories)
+	// Make sure the order matches your NewBillingService function signature!
+	billService := service.NewBillService(billRepo, contractRepo, utilityRepo, utilityRateRepo)
+	
+	// 3. Initialize the Controller
+	billController := controller.NewBillController(billService)
+
+	// 4. Set up the routes (Protecting it so only STAFF can generate bills)
+	billRoute := r.Group("/bills")
+	{
+		billRoute.POST("/generate", auth.Protect([]byte(secret), "STAFF"), billController.GenerateBill)
+	}
+
 	// ================= BILL SLIP (Supabase) =================
 	supabaseURL := os.Getenv("SUPABASE_URL")
 	supabaseKey := os.Getenv("SUPABASE_SERVICE_KEY")
@@ -170,12 +187,16 @@ func main() {
 	storageClient := storage.NewSupabaseStorage(supabaseURL, supabaseKey)
 
 	billSlipRepo := repository.NewBillSlipRepository(db)
-	billSlipService := service.NewBillSlipService(billSlipRepo, storageClient)
+	
+	// ✅ UPDATED: We now pass the `billRepo` into the BillSlipService so it can 
+	// check if a bill exists BEFORE it uploads to Supabase!
+	billSlipService := service.NewBillSlipService(billSlipRepo, billRepo, storageClient)
 	billSlipController := controller.NewBillSlipController(billSlipService)
 
 	billSlipRoute := r.Group("/billslips")
 	{
-		billSlipRoute.POST("/upload", billSlipController.UploadBillSlip)
+		// Tenant route to upload the payment slip
+		billSlipRoute.POST("/upload", auth.Protect([]byte(secret), "TENANT"), billSlipController.UploadBillSlip)
 	}
 
 	// ================= ME =================
