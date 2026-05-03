@@ -16,24 +16,23 @@ func NewBillController(bs service.BillService) *BillController {
 	return &BillController{billService: bs}
 }
 
-// GenerateRequest represents the expected JSON payload from the frontend
+// GenerateRequest represents the expected JSON payload
 type GenerateRequest struct {
-	ContractID string `json:"contract_id" binding:"required"`
-	RecordDate string `json:"record_date" binding:"required"` // Format: YYYY-MM-DD
-	DueDate    string `json:"due_date" binding:"required"`    // Format: YYYY-MM-DD
+	RoomID     string `json:"room_id" binding:"required"`
+	ContractID string `json:"contract_id" binding:"required"` // ✅ Added Contract ID
+	RecordDate string `json:"record_date" binding:"required"` 
+	DueDate    string `json:"due_date" binding:"required"`    
 }
 
 // GenerateBill handles the POST /bills/generate route
 func (ctrl *BillController) GenerateBill(c *gin.Context) {
 	var req GenerateRequest
 
-	// 1. Bind and validate the JSON payload
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request payload: " + err.Error()})
 		return
 	}
 
-	// 2. Parse the dates
 	recordDate, err := time.Parse("2006-01-02", req.RecordDate)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid record_date format. Use YYYY-MM-DD"})
@@ -46,15 +45,13 @@ func (ctrl *BillController) GenerateBill(c *gin.Context) {
 		return
 	}
 
-	// 3. Call the Service Coordinator
-	bill, err := ctrl.billService.GenerateMonthlyBill(req.ContractID, recordDate, dueDate)
+	// ✅ Pass both the RoomID (for BR-02) and ContractID (for usage data)
+	bill, err := ctrl.billService.GenerateMonthlyBill(req.RoomID, req.ContractID, recordDate, dueDate)
 	if err != nil {
-		// Return a 400 Bad Request if a business rule fails (e.g., BR-12)
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	// 4. Return the generated bill as a success response
 	c.JSON(http.StatusCreated, gin.H{
 		"message": "Bill generated successfully",
 		"data":    bill,

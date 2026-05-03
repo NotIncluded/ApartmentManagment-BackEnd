@@ -28,7 +28,7 @@ Content-Type: application/json
 # Make sure test-slip.jpg exists in the same folder as this .http file!
 
 POST {{baseUrl}}/billslips/upload
-# Authorization: Bearer {{loginTenant.response.body.data.access_token}} 
+Authorization: Bearer {{loginTenant.response.body.data.access_token}} 
 Content-Type: multipart/form-data; boundary=MyBoundaryForTesting
 
 --MyBoundaryForTesting

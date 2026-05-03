@@ -1,0 +1,83 @@
+### Variables
+@baseUrl = http://localhost:8081
+@staffEmail = staff@test.com
+@staffPassword = staffpass
+
+### ==========================================
+### SETUP: LOGIN STAFF (To get token)
+### ==========================================
+# @name loginStaff
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+    "email": "{{staffEmail}}",
+    "password": "{{staffPassword}}"
+}
+
+### ==========================================
+### TEST 1: GENERATE BILL - SUCCESS
+### ==========================================
+# This should return a 201 Created and the new Bill data.
+# Make sure to use a Room and Contract ID that actually exist in your database!
+
+POST {{baseUrl}}/bills/generate
+Authorization: Bearer {{loginStaff.response.body.data.access_token}} 
+Content-Type: application/json
+
+{
+    "room_id": "ROOM-101",
+    "contract_id": "CONT-101",
+    "record_date": "2026-05-01",
+    "due_date": "2026-05-05"
+}
+
+### ==========================================
+### TEST 2: BR-02 VIOLATION - AVAILABLE ROOM
+### ==========================================
+# This tests our exact BR-02 logic. Put the ID of a room that 
+# has the status "Available". The server should block it.
+
+POST {{baseUrl}}/bills/generate
+Authorization: Bearer {{loginStaff.response.body.data.access_token}} 
+Content-Type: application/json
+
+{
+    "room_id": "ROOM-AVAILABLE-01",
+    "contract_id": "CONT-999",
+    "record_date": "2026-05-01",
+    "due_date": "2026-05-05"
+}
+
+### ==========================================
+### TEST 3: MISSING UTILITY USAGE DATA
+### ==========================================
+# This tests what happens if staff tries to generate a bill 
+# before recording the water/electric meters for this contract.
+
+POST {{baseUrl}}/bills/generate
+Authorization: Bearer {{loginStaff.response.body.data.access_token}} 
+Content-Type: application/json
+
+{
+    "room_id": "ROOM-102",
+    "contract_id": "CONT-NO-METER-YET",
+    "record_date": "2026-05-01",
+    "due_date": "2026-05-05"
+}
+
+### ==========================================
+### TEST 4: INVALID JSON / MISSING FIELDS
+### ==========================================
+# This tests the Controller's validation. We are purposely 
+# forgetting to send the "contract_id" and "due_date".
+# It should return a 400 Bad Request.
+
+POST {{baseUrl}}/bills/generate
+Authorization: Bearer {{loginStaff.response.body.data.access_token}} 
+Content-Type: application/json
+
+{
+    "room_id": "ROOM-103",
+    "record_date": "2026-05-01"
+}

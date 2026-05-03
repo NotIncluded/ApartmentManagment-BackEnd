@@ -10,69 +10,66 @@ import (
 )
 
 type BillService interface {
-	GenerateMonthlyBill(contractID string, recordDate time.Time, dueDate time.Time) (*model.Bill, error)
+	GenerateMonthlyBill(roomID string, contractID string, recordDate time.Time, dueDate time.Time) (*model.Bill, error)
 }
 
 type billService struct {
-	billRepo     repository.BillRepository
-	contractRepo repository.ContractRepository       // You will need this
-	usageRepo    repository.UtilityUsageRepository   // You will need this
-	rateRepo     repository.UtilityRateRepository    // You will need this
+	billRepo  repository.BillRepository
+	roomRepo  *repository.RoomRepository        
+	usageRepo *repository.UtilityUsageRepository
+	rateRepo  *repository.UtilityRateRepository  
 }
 
-func NewBillService(br repository.BillRepository, cr repository.ContractRepository, ur repository.UtilityUsageRepository, rr repository.UtilityRateRepository) BillService {
+func NewBillService(br repository.BillRepository, rr *repository.RoomRepository, ur *repository.UtilityUsageRepository, rate *repository.UtilityRateRepository) BillService {
 	return &billService{
-		billRepo:     br,
-		contractRepo: cr,
-		usageRepo:    ur,
-		rateRepo:     rr,
+		billRepo:  br,
+		roomRepo:  rr,
+		usageRepo: ur,
+		rateRepo:  rate,
 	}
 }
 
-func (s *billService) GenerateMonthlyBill(contractID string, recordDate time.Time, dueDate time.Time) (*model.Bill, error) {
-	// 1. Get Contract & Room Data (To check BR-02)
-	contract, err := s.contractRepo.FindByID(contractID)
+func (s *billService) GenerateMonthlyBill(roomID string, contractID string, recordDate time.Time, dueDate time.Time) (*model.Bill, error) {
+	// 1. Room Expert (BR-02 Validation) - Using your existing FindRoomByID!
+	room, err := s.roomRepo.FindRoomByID(roomID)
 	if err != nil {
-		return nil, fmt.Errorf("contract not found: %w", err)
+		return nil, fmt.Errorf("room not found: %w", err)
 	}
-	// Assuming Contract struct has a Room relationship you can check
-	if contract.Room.Status == "Available" {
+	if room.Status == "Available" {
 		return nil, errors.New("BR-02 Violation: Cannot generate bill for an AVAILABLE room")
 	}
 
-	// 2. Get Utility Rate (The pricing expert)
-	// We'll assume you have a function to get the current active rate
-	rate, err := s.rateRepo.GetCurrentRate()
+	// 2. Get Utility Rate - Using your existing FindLatestRate!
+	rate, err := s.rateRepo.FindLatestRate()
 	if err != nil {
 		return nil, errors.New("failed to retrieve active utility rates")
 	}
 
-	// 3. Get Utility Usage (The meter expert)
-	usage, err := s.usageRepo.FindByContractAndDate(contractID, recordDate)
-	if err != nil {
+	// 3. Get Utility Usage - Using your existing FindLatestByContract!
+	usage, err := s.usageRepo.FindLatestByContract(contractID)
+	if err != nil || usage == nil {
 		return nil, fmt.Errorf("utility usage data not found for contract %s", contractID)
 	}
 
-	// 4. Calculate Usage (BR-12 Validation happens inside these methods)
+	// 4. Calculate Usage (BR-12 Validation)
 	waterUnits, err := usage.CalculateWaterUsage()
 	if err != nil {
-		return nil, err // Fails if new unit < old unit
+		return nil, err
 	}
 	electricUnits, err := usage.CalculateElectricUsage()
 	if err != nil {
 		return nil, err
 	}
 
-	// Calculate monetary fees
 	waterFee := float64(waterUnits) * rate.WaterRate
 	electricFee := float64(electricUnits) * rate.ElectricRate
 
-	// 5. Creator: Construct the Bill using your exact constructor
+	// 5. Creator: Construct the Bill
 	newBill := model.NewBill(
-		contract.ID,
+		contractID, // We now pass the real contractID to the bill!
 		rate.ID,
 		recordDate,
-		contract.RentFee, // Assuming rent is tied to the contract
+		0, // Rent fee (You can update this later if rent is stored in the contract)
 		waterFee,
 		electricFee,
 		rate.CommonFee,
@@ -81,7 +78,7 @@ func (s *billService) GenerateMonthlyBill(contractID string, recordDate time.Tim
 
 	// 6. Save to Database
 	if err := s.billRepo.Create(newBill); err != nil {
-		return nil, fmt.Errorf("failed to save bill to database: %w", err)
+		return nil, fmt.Errorf("failed to save bill: %w", err)
 	}
 
 	return newBill, nil

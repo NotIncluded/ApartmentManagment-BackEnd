@@ -160,17 +160,14 @@ func main() {
 	}
 
 // ================= BILL =================
-	// 1. Initialize the Bill Repository
 	billRepo := repository.NewBillRepository(db)
 
-	// 2. Initialize the Billing Service (Injecting the 4 required repositories)
-	// Make sure the order matches your NewBillingService function signature!
-	billService := service.NewBillService(billRepo, contractRepo, utilityRepo, utilityRateRepo)
+	// Updated to NewBillService
+	billService := service.NewBillService(billRepo, roomRepo, utilityRepo, utilityRateRepo)
 	
-	// 3. Initialize the Controller
+	// Updated to NewBillController
 	billController := controller.NewBillController(billService)
 
-	// 4. Set up the routes (Protecting it so only STAFF can generate bills)
 	billRoute := r.Group("/bills")
 	{
 		billRoute.POST("/generate", auth.Protect([]byte(secret), "STAFF"), billController.GenerateBill)

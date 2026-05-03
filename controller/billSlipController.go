@@ -2,16 +2,17 @@ package controller
 
 import (
 	"net/http"
+	"strings" // ✅ Added to help us check the error message
 
 	"github.com/PunMung-66/ApartmentSys/service"
 	"github.com/gin-gonic/gin"
 )
 
 type BillSlipController struct {
-	service *service.BillSlipService
+	service service.BillSlipService 
 }
 
-func NewBillSlipController(service *service.BillSlipService) *BillSlipController {
+func NewBillSlipController(service service.BillSlipService) *BillSlipController { 
 	return &BillSlipController{service: service}
 }
 
@@ -37,10 +38,15 @@ func (ctrl *BillSlipController) UploadBillSlip(c *gin.Context) {
 	contentType := fileHeader.Header.Get("Content-Type")
 
 	// 3. Pass the opened file (io.Reader) and the Filename to the service layer.
-	// Note: We changed the parameters here to pass `file` and `fileHeader.Filename` 
-	// instead of `filePath`. We will update the Service to match this next.
 	slipURL, err := ctrl.service.UploadSlip(c.Request.Context(), billID, roomID, file, fileHeader.Filename, contentType)
 	if err != nil {
+		// ✅ PRO-TIP APPLIED: If the error is because the bill is missing, return 404!
+		if strings.Contains(err.Error(), "does not exist") {
+			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+			return
+		}
+
+		// Otherwise, it's a real server/upload error, so we keep the 500
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
