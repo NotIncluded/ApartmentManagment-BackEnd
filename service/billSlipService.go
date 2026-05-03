@@ -12,24 +12,37 @@ import (
 	"github.com/PunMung-66/ApartmentSys/repository"
 )
 
-type BillSlipService struct {
-	repo          *repository.BillSlipRepository
-	storageClient storage.StorageService // Replaced MinioClient with our new interface
+// 1. The Interface: Tells the Controller exactly what this service can do
+type BillSlipService interface {
+	UploadSlip(ctx context.Context, billID, roomID string, file io.Reader, fileName, contentType string) (string, error)
 }
 
-// Updated constructor to accept the new storage client
-func NewBillSlipService(repo *repository.BillSlipRepository, storageClient storage.StorageService) *BillSlipService {
-	return &BillSlipService{
+// 2. The Struct (lowercase 'b'): Holds our database and storage connections
+type billSlipService struct {
+	repo          *repository.BillSlipRepository
+	billRepo      repository.BillRepository      
+	storageClient storage.StorageService         
+}
+
+// 3. The Constructor: Returns the Interface, builds the Struct
+func NewBillSlipService(repo *repository.BillSlipRepository, billRepo repository.BillRepository, storageClient storage.StorageService) BillSlipService {
+	return &billSlipService{
 		repo:          repo,
+		billRepo:      billRepo,               
 		storageClient: storageClient,
 	}
 }
 
-// Updated parameters to match the Controller (file stream and fileName)
-func (s *BillSlipService) UploadSlip(ctx context.Context, billID, roomID string, file io.Reader, fileName, contentType string) (string, error) {
+// 4. The Method (lowercase 'b' receiver): The actual logic
+func (s *billSlipService) UploadSlip(ctx context.Context, billID, roomID string, file io.Reader, fileName, contentType string) (string, error) {
+	
+	// PRE-CHECK: Verify the bill actually exists before we waste time uploading an image!
+	_, err := s.billRepo.FindByID(billID)
+	if err != nil {
+		return "", fmt.Errorf("cannot upload slip: bill ID %s does not exist", billID)
+	}
+
 	// 1. Generate a unique object path for Supabase
-	// We extract the original extension (e.g., .jpg, .png) and append a UNIX timestamp.
-	// This prevents browser caching issues and stops files from overwriting each other.
 	ext := filepath.Ext(fileName)
 	objectPath := fmt.Sprintf("slips/%s-%s-%d%s", billID, roomID, time.Now().Unix(), ext)
 
@@ -41,12 +54,12 @@ func (s *BillSlipService) UploadSlip(ctx context.Context, billID, roomID string,
 		return "", fmt.Errorf("failed to upload image to storage: %w", err)
 	}
 
-	// 3. Save the resulting public URL to your AWS PostgreSQL Database
+	// 3. Save the resulting public URL to your PostgreSQL Database
 	slip := &model.BillSlip{
-		ID:      billID + "-" + roomID + "-slip", // Keeping your original ID logic
+		ID:      billID + "-" + roomID + "-slip", 
 		BillID:  billID,
 		RoomID:  roomID,
-		SlipURL: slipURL, // Storing the Supabase URL we just generated
+		SlipURL: slipURL, 
 	}
 
 	err = s.repo.CreateBillSlip(slip)
