@@ -1,5 +1,5 @@
 ### ==========================================
-### APARTMENT SYSTEM - BILL SLIP TESTS
+### APARTMENT SYSTEM - BILL SLIP UPLOAD
 ### ==========================================
 
 ### Variables
@@ -7,9 +7,9 @@
 @tenantEmail = tenant@test.com
 @tenantPassword = TenantPassword123
 
-# 🚩 PASTE THE REAL BILL ID FROM YOUR LAST TEST HERE!
-# You can get this from your pgAdmin screenshot (the 'id' column)
-@activeBillId = 550e8400-e29b-41d4-a716-446655440050
+# 🚩 PASTE YOUR REAL IDs HERE:
+@billId = 16b7feac-f33e-4ac6-ba6e-4193bb58b345
+@roomId = 550e8400-e29b-41d4-a716-446655440014
 
 ### ==========================================
 ### SETUP: LOGIN TENANT
@@ -24,27 +24,26 @@ Content-Type: application/json
 }
 
 ### ==========================================
-### TEST 1: UPLOAD BILL SLIP - SUCCESS
+### TEST 1: UPLOAD BILL SLIP
 ### ==========================================
-# This link the payment slip to the specific bill you just generated.
+# IMPORTANT: Make sure you have a small image file named "test-slip.jpg" 
+# saved in the exact same folder as this .http file!
+
 POST {{baseUrl}}/billslips/upload
 Authorization: Bearer {{loginTenant.response.body.data.access_token}} 
-Content-Type: multipart/form-data; boundary=MyBoundaryForTesting
+Content-Type: multipart/form-data; boundary=MyBoundary
 
---MyBoundaryForTesting
+--MyBoundary
 Content-Disposition: form-data; name="bill_id"
 
-{{activeBillId}}
---MyBoundaryForTesting
+{{billId}}
+--MyBoundary
+Content-Disposition: form-data; name="room_id"
+
+{{roomId}}
+--MyBoundary
 Content-Disposition: form-data; name="slip"; filename="test-slip.jpg"
 Content-Type: image/jpeg
 
 < ./test-slip.jpg
---MyBoundaryForTesting--
-
-### ==========================================
-### TEST 2: GET MY BILLS (Verify status change)
-### ==========================================
-# Once uploaded, the bill status usually changes to "WaitingApproval"
-GET {{baseUrl}}/bills/me
-Authorization: Bearer {{loginTenant.response.body.data.access_token}}
+--MyBoundary--

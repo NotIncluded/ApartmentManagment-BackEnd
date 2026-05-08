@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/PunMung-66/ApartmentSys/internal/storage"
 	"github.com/PunMung-66/ApartmentSys/model"
 	"github.com/PunMung-66/ApartmentSys/repository"
@@ -56,7 +57,7 @@ func (s *billSlipService) UploadSlip(ctx context.Context, billID, roomID string,
 
 	// 3. Save the resulting public URL to your PostgreSQL Database
 	slip := &model.BillSlip{
-		ID:      billID + "-" + roomID + "-slip", 
+		ID:      uuid.New().String(),
 		BillID:  billID,
 		RoomID:  roomID,
 		SlipURL: slipURL, 

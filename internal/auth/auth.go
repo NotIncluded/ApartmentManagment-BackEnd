@@ -16,7 +16,7 @@ func GenerateToken(signature []byte, userId string, role string) (string, error)
         UserID: userId,
         Role:   role,
         StandardClaims: jwt.StandardClaims{
-            ExpiresAt: time.Now().Add(15 * time.Minute).Unix(),
+            ExpiresAt: time.Now().Add(90 * time.Minute).Unix(),
             Issuer:    "apartment_sys",
             IssuedAt:  time.Now().Unix(),
         },
