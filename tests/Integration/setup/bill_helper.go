@@ -11,7 +11,7 @@ func CreateTestBill(userID string, roomID string) *model.Bill {
 	// For simplicity, create a contract first using the real userID
 	contract, _ := CreateTestContract(userID, roomID, time.Now().Format("2006-01-02"), time.Now().AddDate(0, 6, 0).Format("2006-01-02"), "Active")
 	
-	// ✅ FIX: Only pass the 8 required arguments to the constructor
+	// Create the bill using exactly the 8 required arguments
 	bill := model.NewBill(
 		contract.ID,                  // 1. Contract ID
 		"test-rate-id",               // 2. Rate ID
@@ -23,8 +23,7 @@ func CreateTestBill(userID string, roomID string) *model.Bill {
 		time.Now().AddDate(0, 0, 30), // 8. Due Date
 	)
 
-	// ✅ FIX: Assign the RoomID so the test database is happy
-	bill.RoomID = roomID
+	// We no longer assign bill.RoomID here because we removed it from the model!
 
 	TestDB.Create(&bill)
 	return bill
