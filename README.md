@@ -50,4 +50,3 @@ docker compose up --build
 ```bash
 go test ./...
 ```
-xd
