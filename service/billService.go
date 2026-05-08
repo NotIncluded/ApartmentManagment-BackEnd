@@ -69,7 +69,7 @@ func (s *billService) GenerateMonthlyBill(roomID string, contractID string, reco
 		contractID, 
 		rate.ID,
 		recordDate,
-		0, // Rent fee (Update later if needed)
+		3000, // Rent fee (Update later if needed)
 		waterFee,
 		electricFee,
 		rate.CommonFee,
