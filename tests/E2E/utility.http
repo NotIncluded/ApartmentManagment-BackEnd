@@ -1,0 +1,56 @@
+### Variables
+@baseUrl = http://localhost:8081
+@staffEmail = admin@example.com
+@staffPassword = mysecretpassword
+@tenantEmail = tenant@test.com
+@tenantPassword = TenantPassword123
+
+# Replace this with the Contract ID you made earlier!
+@contractId = b466343e-67c4-40ef-a910-4b29b4aebdf2
+
+### ==========================================
+### SETUP: LOGIN STAFF
+### ==========================================
+# @name loginStaff
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+    "email": "{{staffEmail}}",
+    "password": "{{staffPassword}}"
+}
+
+### ==========================================
+### TEST 1: CREATE UTILITY RATE
+### ==========================================
+# Notice the URL is now exactly /utility-rates
+# @name createRate
+POST {{baseUrl}}/utility-rates
+Authorization: Bearer {{loginStaff.response.body.data.access_token}} 
+Content-Type: application/json
+
+{
+    "period": "2026-05",
+    "water_rate": 18.0,
+    "electric_rate": 8.0,
+    "common_fee": 500.0
+}
+
+### ==========================================
+### TEST 2: RECORD UTILITY USAGE
+### ==========================================
+# Notice the URL is now exactly /utility-usages
+# Make sure you put your real Contract ID in the variables at the top!
+# @name recordUsage
+POST {{baseUrl}}/utility-usages
+Authorization: Bearer {{loginStaff.response.body.data.access_token}} 
+Content-Type: application/json
+
+{
+    "contract_id": "{{contractId}}",
+    "old_water_unit": 100,
+    "new_water_unit": 115,
+    "old_electric_unit": 500,
+    "new_electric_unit": 620,
+    "record_date": "2026-05-01"
+}

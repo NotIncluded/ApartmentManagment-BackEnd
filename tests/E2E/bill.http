@@ -1,7 +1,7 @@
 ### Variables
 @baseUrl = http://localhost:8081
-@staffEmail = staff@test.com
-@staffPassword = staffpass
+@staffEmail = admin@example.com
+@staffPassword = mysecretpassword
 
 ### ==========================================
 ### SETUP: LOGIN STAFF (To get token)
@@ -26,10 +26,10 @@ Authorization: Bearer {{loginStaff.response.body.data.access_token}}
 Content-Type: application/json
 
 {
-    "room_id": "ROOM-101",
-    "contract_id": "CONT-101",
-    "record_date": "2026-05-01",
-    "due_date": "2026-05-05"
+    "room_id": "550e8400-e29b-41d4-a716-446655440010",
+    "contract_id": "550e8400-e29b-41d4-a716-446655440030",
+    "record_date": "2026-05-07",
+    "due_date": "2026-05-12"
 }
 
 ### ==========================================
