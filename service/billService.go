@@ -30,7 +30,7 @@ func NewBillService(br repository.BillRepository, rr *repository.RoomRepository,
 }
 
 func (s *billService) GenerateMonthlyBill(roomID string, contractID string, recordDate time.Time, dueDate time.Time) (*model.Bill, error) {
-	// 1. Room Expert (BR-02 Validation) - Using your existing FindRoomByID!
+	// 1. Room Expert (BR-02 Validation)
 	room, err := s.roomRepo.FindRoomByID(roomID)
 	if err != nil {
 		return nil, fmt.Errorf("room not found: %w", err)
@@ -39,13 +39,13 @@ func (s *billService) GenerateMonthlyBill(roomID string, contractID string, reco
 		return nil, errors.New("BR-02 Violation: Cannot generate bill for an AVAILABLE room")
 	}
 
-	// 2. Get Utility Rate - Using your existing FindLatestRate!
+	// 2. Get Utility Rate
 	rate, err := s.rateRepo.FindLatestRate()
 	if err != nil {
 		return nil, errors.New("failed to retrieve active utility rates")
 	}
 
-	// 3. Get Utility Usage - Using your existing FindLatestByContract!
+	// 3. Get Utility Usage
 	usage, err := s.usageRepo.FindLatestByContract(contractID)
 	if err != nil || usage == nil {
 		return nil, fmt.Errorf("utility usage data not found for contract %s", contractID)
@@ -66,10 +66,10 @@ func (s *billService) GenerateMonthlyBill(roomID string, contractID string, reco
 
 	// 5. Creator: Construct the Bill
 	newBill := model.NewBill(
-		contractID, // We now pass the real contractID to the bill!
+		contractID, 
 		rate.ID,
 		recordDate,
-		0, // Rent fee (You can update this later if rent is stored in the contract)
+		3000, // Rent fee (Update later if needed)
 		waterFee,
 		electricFee,
 		rate.CommonFee,

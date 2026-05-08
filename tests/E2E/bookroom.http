@@ -1,0 +1,32 @@
+### Variables
+@baseUrl = http://localhost:8081
+@staffEmail = admin@example.com
+@staffPassword = mysecretpassword
+
+### ==========================================
+### SETUP: LOGIN STAFF (To get token)
+### ==========================================
+# @name loginStaff
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+    "email": "{{staffEmail}}",
+    "password": "{{staffPassword}}"
+}
+### ==========================================
+### SETUP: ASSIGN ROOM (CREATE CONTRACT)
+### ==========================================
+# Replace the URL {id} with a real Room UUID from pgAdmin
+# Replace "user_id" with a real Tenant UUID from pgAdmin
+
+POST {{baseUrl}}/rooms/013bf72a-c72e-479b-995f-9bc8e0e5a7a3/assign
+Authorization: Bearer {{loginStaff.response.body.data.access_token}}
+Content-Type: application/json
+
+{
+    "user_id": "11d886c1-d683-4579-840f-42ea3441e784",
+    "start_date": "2026-05-07",
+    "end_date": "2027-05-07",
+    "status": "Active"
+}
